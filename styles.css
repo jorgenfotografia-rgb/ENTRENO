@@ -21,16 +21,19 @@ body {
   background: radial-gradient(circle at 85% 5%, rgba(240,255,68,.10), transparent 28rem), var(--bg);
   color: var(--text);
 }
-button, summary { font: inherit; }
+button, summary, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 
-.app-shell {
+.app-shell,
+.onboarding-shell {
   width: min(100%, 520px);
   margin: 0 auto;
   padding: max(24px, env(safe-area-inset-top)) 20px max(30px, env(safe-area-inset-bottom));
 }
 
-.app-header {
+.app-header,
+.onboarding-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -58,14 +61,123 @@ h1 {
   width: 12px;
   height: 12px;
   margin-top: 8px;
+  flex: 0 0 auto;
   border-radius: 999px;
   background: var(--accent);
   box-shadow: 0 0 0 6px rgba(240,255,68,.09);
 }
 
-.hero-card, .goal-card, .today-card, .settings {
+.hero-card, .goal-card, .today-card, .settings, .commitment-card {
   border: 1px solid var(--border);
   background: rgba(21,23,25,.92);
+}
+
+.commitment-card {
+  padding: 26px 22px;
+  border-radius: 28px;
+}
+
+.commitment-card h1 {
+  max-width: 430px;
+  font-size: clamp(2rem, 8.4vw, 3.25rem);
+}
+
+.onboarding-copy {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.goal-form { margin-top: 28px; }
+.goal-form fieldset { margin: 0; padding: 0; border: 0; }
+.goal-form legend {
+  margin-bottom: 12px;
+  color: var(--text);
+  font-size: .86rem;
+  font-weight: 800;
+}
+
+.goal-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.goal-choice-grid label { min-width: 0; cursor: pointer; }
+.goal-choice-grid input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.goal-choice {
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-2);
+  color: var(--text);
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.goal-choice strong {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.goal-choice small {
+  color: var(--muted);
+  font-size: .63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.goal-choice-grid input:checked + .goal-choice {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.goal-choice-grid input:checked + .goal-choice small { color: var(--accent-text); }
+.goal-choice-grid input:focus-visible + .goal-choice {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.commitment-summary {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 15px 16px;
+  border-radius: 16px;
+  background: var(--panel-2);
+}
+
+.commitment-summary > span {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.commitment-summary p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.45;
+}
+
+.onboarding-button { margin-top: 16px; }
+.onboarding-note {
+  margin: 16px 4px 0;
+  color: #6f757a;
+  font-size: .76rem;
+  line-height: 1.45;
 }
 
 .hero-card {
@@ -123,6 +235,16 @@ h1 {
   letter-spacing: -.035em;
 }
 
+.chosen-label {
+  display: inline-block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
 .points-pill {
   min-height: 46px;
   flex: 0 0 auto;
@@ -135,14 +257,8 @@ h1 {
   color: var(--accent-text);
 }
 
-.points-pill > span:first-child {
-  font-size: .86rem;
-}
-
-.points-pill strong {
-  font-size: 1.2rem;
-}
-
+.points-pill > span:first-child { font-size: .86rem; }
+.points-pill strong { font-size: 1.2rem; }
 .points-pill > span:last-child {
   font-size: .72rem;
   font-weight: 900;
@@ -171,7 +287,7 @@ h1 {
 
 .goal-segments {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--goal-count, 3), minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -242,7 +358,7 @@ h1 {
 
 .primary-button:disabled {
   cursor: default;
-  opacity: .62;
+  opacity: .42;
 }
 
 .primary-button:focus-visible,
@@ -343,10 +459,15 @@ summary:focus-visible {
   font-size: .9rem;
 }
 
+.settings-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .secondary-button {
   width: 100%;
   min-height: 48px;
-  margin-top: 8px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: transparent;
@@ -354,6 +475,8 @@ summary:focus-visible {
   font-weight: 800;
   cursor: pointer;
 }
+
+.secondary-button.neutral { color: var(--text); }
 
 footer {
   padding: 24px 0 4px;
@@ -363,10 +486,14 @@ footer {
 }
 
 @media (max-width: 380px) {
-  .app-shell { padding-left: 14px; padding-right: 14px; }
-  .hero-card, .goal-card { padding: 20px; }
+  .app-shell, .onboarding-shell { padding-left: 14px; padding-right: 14px; }
+  .hero-card, .goal-card, .commitment-card { padding: 20px; }
   .goal-topline { gap: 10px; }
   .points-pill { padding: 0 10px; }
+  .goal-choice-grid { gap: 6px; }
+  .goal-choice { min-height: 74px; border-radius: 13px; }
+  .goal-choice strong { font-size: 1.3rem; }
+  .goal-choice small { font-size: .56rem; }
   .week-grid { gap: 5px; }
   .day-cell { border-radius: 12px; }
 }

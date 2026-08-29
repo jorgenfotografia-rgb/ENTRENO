@@ -1,18 +1,28 @@
 (() => {
   "use strict";
 
-  // Conservamos la misma clave de V0.1 para no perder entrenamientos existentes.
   const CHECKINS_KEY = "entreno-v01-checkins";
   const POINTS_KEY = "entreno-v02-points";
   const AWARDS_KEY = "entreno-v02-awarded-weeks";
-  const WEEKLY_GOAL = 3;
+  const GOAL_KEY = "entreno-v03-weekly-goal";
   const WEEKLY_REWARD = 100;
+  const MIN_GOAL = 2;
+  const MAX_GOAL = 6;
 
   const $ = (selector) => document.querySelector(selector);
+
+  const onboarding = $("#onboarding");
+  const appShell = $("#appShell");
+  const onboardingTitle = $("#onboardingTitle");
+  const onboardingLead = $("#onboardingLead");
+  const goalForm = $("#goalForm");
+  const goalSubmit = $("#goalSubmit");
+  const goalInputs = [...document.querySelectorAll('input[name="weeklyGoal"]')];
 
   const streakCount = $("#streakCount");
   const streakUnit = $("#streakUnit");
   const streakMessage = $("#streakMessage");
+  const goalTitle = $("#goalTitle");
   const pointsBalance = $("#pointsBalance");
   const weeklyProgress = $("#weeklyProgress");
   const weeklyReward = $("#weeklyReward");
@@ -24,12 +34,18 @@
   const feedback = $("#feedback");
   const weekGrid = $("#weekGrid");
   const totalCount = $("#totalCount");
+  const changeGoalButton = $("#changeGoalButton");
   const resetButton = $("#resetButton");
 
   const pad = (n) => String(n).padStart(2, "0");
 
   function localDateKey(date = new Date()) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
+  function dateFromKey(key) {
+    const [year, month, day] = key.split("-").map(Number);
+    return new Date(year, month - 1, day, 12, 0, 0, 0);
   }
 
   function addDays(date, amount) {
@@ -47,6 +63,17 @@
 
   function currentWeekKey(date = new Date()) {
     return localDateKey(startOfWeek(date));
+  }
+
+  function loadGoal() {
+    const value = Number.parseInt(localStorage.getItem(GOAL_KEY) || "", 10);
+    return Number.isInteger(value) && value >= MIN_GOAL && value <= MAX_GOAL ? value : null;
+  }
+
+  function saveGoal(value) {
+    const safe = Math.min(MAX_GOAL, Math.max(MIN_GOAL, Math.floor(value)));
+    localStorage.setItem(GOAL_KEY, String(safe));
+    return safe;
   }
 
   function loadCheckins() {
@@ -94,30 +121,28 @@
     return checkins.filter((key) => key >= startKey && key <= endKey);
   }
 
-  function calculateStreak(checkins) {
-    const set = new Set(checkins);
-    const now = new Date();
-    const today = localDateKey(now);
-    const yesterdayDate = addDays(now, -1);
-    const yesterday = localDateKey(yesterdayDate);
+  function calculateWeeklyStreak(awardedWeeks) {
+    const set = new Set(awardedWeeks);
+    const thisWeek = startOfWeek(new Date());
+    const previousWeek = addDays(thisWeek, -7);
 
     let cursor;
-    if (set.has(today)) cursor = now;
-    else if (set.has(yesterday)) cursor = yesterdayDate;
+    if (set.has(localDateKey(thisWeek))) cursor = thisWeek;
+    else if (set.has(localDateKey(previousWeek))) cursor = previousWeek;
     else return 0;
 
     let count = 0;
     while (set.has(localDateKey(cursor))) {
       count += 1;
-      cursor = addDays(cursor, -1);
-      if (count > 3660) break;
+      cursor = addDays(cursor, -7);
+      if (count > 520) break;
     }
     return count;
   }
 
-  function awardCurrentWeekIfEligible(checkins) {
+  function awardCurrentWeekIfEligible(checkins, goal) {
     const progress = getCurrentWeekCheckins(checkins).length;
-    if (progress < WEEKLY_GOAL) return 0;
+    if (progress < goal) return 0;
 
     const weekKey = currentWeekKey();
     const awardedWeeks = loadAwardedWeeks();
@@ -138,32 +163,34 @@
     }).format(date);
   }
 
-  function renderGoal(checkins) {
+  function renderGoal(checkins, goal) {
     const progress = getCurrentWeekCheckins(checkins).length;
-    const cappedProgress = Math.min(progress, WEEKLY_GOAL);
+    const cappedProgress = Math.min(progress, goal);
     const awarded = loadAwardedWeeks().includes(currentWeekKey());
-    const remaining = Math.max(WEEKLY_GOAL - progress, 0);
+    const remaining = Math.max(goal - progress, 0);
 
+    goalTitle.textContent = `${goal} ${goal === 1 ? "entrenamiento" : "entrenamientos"}`;
     pointsBalance.textContent = String(loadPoints());
-    weeklyProgress.textContent = `${cappedProgress} / ${WEEKLY_GOAL}`;
+    weeklyProgress.textContent = `${cappedProgress} / ${goal}`;
     weeklyReward.textContent = awarded ? "Recompensa obtenida ✓" : `+${WEEKLY_REWARD} pts al completar`;
 
-    goalSegments.innerHTML = Array.from({ length: WEEKLY_GOAL }, (_, index) => {
+    goalSegments.style.setProperty("--goal-count", String(goal));
+    goalSegments.innerHTML = Array.from({ length: goal }, (_, index) => {
       const filled = index < cappedProgress;
       return `<span class="goal-segment${filled ? " filled" : ""}" aria-hidden="true"></span>`;
     }).join("");
 
     goalSegments.setAttribute(
       "aria-label",
-      `${cappedProgress} de ${WEEKLY_GOAL} entrenamientos completados esta semana`
+      `${cappedProgress} de ${goal} entrenamientos completados esta semana`
     );
 
     if (remaining === 0) {
-      weeklyMessage.textContent = "Semana cumplida. Tu constancia ya generó puntos.";
+      weeklyMessage.textContent = "Semana cumplida. Cumpliste lo que te propusiste.";
     } else if (remaining === 1) {
-      weeklyMessage.textContent = "Te falta 1 entrenamiento para completar la semana.";
+      weeklyMessage.textContent = "Te falta 1 entrenamiento para cumplir tu objetivo.";
     } else {
-      weeklyMessage.textContent = `Te faltan ${remaining} entrenamientos para completar la semana.`;
+      weeklyMessage.textContent = `Te faltan ${remaining} entrenamientos para cumplir tu objetivo.`;
     }
   }
 
@@ -193,24 +220,64 @@
     weekGrid.innerHTML = cells.join("");
   }
 
+  function showOnboarding(editing = false) {
+    const currentGoal = loadGoal();
+    appShell.hidden = true;
+    onboarding.hidden = false;
+    onboarding.dataset.mode = editing ? "edit" : "first";
+
+    onboardingTitle.textContent = editing
+      ? "¿Cuántas veces querés entrenar por semana?"
+      : "¿Cuántas veces querés entrenar por semana?";
+
+    onboardingLead.textContent = editing
+      ? "Ajustá tu compromiso a una frecuencia que puedas sostener."
+      : "Elegí un objetivo que puedas sostener. Descansar también forma parte del entrenamiento.";
+
+    goalInputs.forEach((input) => {
+      input.checked = currentGoal !== null && Number(input.value) === currentGoal;
+    });
+
+    goalSubmit.disabled = currentGoal === null;
+    goalSubmit.querySelector("span:first-child").textContent = editing ? "GUARDAR OBJETIVO" : "COMENZAR";
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function showApp(message = "") {
+    onboarding.hidden = true;
+    appShell.hidden = false;
+    render(message);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
   function render(message = "") {
+    const goal = loadGoal();
+    if (goal === null) {
+      showOnboarding(false);
+      return;
+    }
+
     const checkins = loadCheckins();
-    const rewardGained = awardCurrentWeekIfEligible(checkins);
+    const rewardGained = awardCurrentWeekIfEligible(checkins, goal);
     const today = new Date();
     const todayKey = localDateKey(today);
     const doneToday = checkins.includes(todayKey);
-    const streak = calculateStreak(checkins);
+    const weeklyStreak = calculateWeeklyStreak(loadAwardedWeeks());
 
     todayLabel.textContent = formatLongDate(today);
     todayBadge.textContent = doneToday ? "Completado" : "Pendiente";
     todayBadge.classList.toggle("done", doneToday);
 
-    streakCount.textContent = String(streak);
-    streakUnit.textContent = streak === 1 ? "día" : "días";
+    streakCount.textContent = String(weeklyStreak);
+    streakUnit.textContent = weeklyStreak === 1 ? "semana" : "semanas";
 
-    if (streak === 0) streakMessage.textContent = "Registrá tu próximo entrenamiento.";
-    else if (streak === 1) streakMessage.textContent = "Primer día. La racha ya empezó.";
-    else streakMessage.textContent = `${streak} días seguidos. Seguí construyendo constancia.`;
+    if (weeklyStreak === 0) {
+      streakMessage.textContent = "Tu racha empieza cuando completes tu primer objetivo semanal.";
+    } else if (weeklyStreak === 1) {
+      streakMessage.textContent = "Primera semana cumplida. Tu racha de constancia empezó.";
+    } else {
+      streakMessage.textContent = `${weeklyStreak} semanas cumpliendo lo que te propusiste.`;
+    }
 
     trainButton.disabled = doneToday;
     trainButton.innerHTML = doneToday
@@ -219,13 +286,32 @@
 
     totalCount.textContent = `${checkins.length} ${checkins.length === 1 ? "entrenamiento" : "entrenamientos"}`;
 
-    renderGoal(checkins);
+    renderGoal(checkins, goal);
     renderWeek(checkins);
 
     feedback.textContent = rewardGained
       ? `Objetivo semanal cumplido. +${rewardGained} puntos. ⭐`
       : message;
   }
+
+  goalInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      goalSubmit.disabled = false;
+    });
+  });
+
+  goalForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const selected = goalInputs.find((input) => input.checked);
+    if (!selected) return;
+
+    const editing = onboarding.dataset.mode === "edit";
+    const goal = saveGoal(Number(selected.value));
+    showApp(editing
+      ? `Objetivo actualizado: ${goal} entrenamientos por semana.`
+      : `Tu compromiso empieza con ${goal} entrenamientos por semana.`
+    );
+  });
 
   trainButton.addEventListener("click", () => {
     const checkins = loadCheckins();
@@ -241,14 +327,19 @@
     }
   });
 
+  changeGoalButton.addEventListener("click", () => {
+    showOnboarding(true);
+  });
+
   resetButton.addEventListener("click", () => {
-    const confirmed = window.confirm("¿Borrar entrenamientos, objetivos cumplidos y puntos de este dispositivo?");
+    const confirmed = window.confirm("¿Borrar objetivo, entrenamientos, semanas cumplidas y puntos de este dispositivo?");
     if (!confirmed) return;
 
     localStorage.removeItem(CHECKINS_KEY);
     localStorage.removeItem(POINTS_KEY);
     localStorage.removeItem(AWARDS_KEY);
-    render("Datos de prueba eliminados.");
+    localStorage.removeItem(GOAL_KEY);
+    showOnboarding(false);
   });
 
   if ("serviceWorker" in navigator) {
@@ -257,5 +348,6 @@
     });
   }
 
-  render();
+  if (loadGoal() === null) showOnboarding(false);
+  else showApp();
 })();

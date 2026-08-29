@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111315">
-  <meta name="description" content="ENTRENO: convertí tu constancia en progreso. Objetivos semanales, rachas y puntos.">
+  <meta name="description" content="ENTRENO: elegí tu objetivo semanal, cumplilo y convertí tu constancia en progreso.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -12,30 +12,84 @@
   <title>ENTRENO</title>
 </head>
 <body>
-  <main class="app-shell">
+  <main id="onboarding" class="onboarding-shell" hidden>
+    <header class="onboarding-header">
+      <p class="eyebrow">ENTRENO · V0.3</p>
+      <div class="status-dot" aria-label="Aplicación activa"></div>
+    </header>
+
+    <section class="commitment-card" aria-labelledby="onboardingTitle">
+      <p class="card-label">Tu compromiso</p>
+      <h1 id="onboardingTitle">¿Cuántas veces querés entrenar por semana?</h1>
+      <p id="onboardingLead" class="onboarding-copy">Elegí un objetivo que puedas sostener. Descansar también forma parte del entrenamiento.</p>
+
+      <form id="goalForm" class="goal-form">
+        <fieldset>
+          <legend>Objetivo semanal</legend>
+          <div class="goal-choice-grid">
+            <label>
+              <input type="radio" name="weeklyGoal" value="2">
+              <span class="goal-choice"><strong>2</strong><small>veces</small></span>
+            </label>
+            <label>
+              <input type="radio" name="weeklyGoal" value="3">
+              <span class="goal-choice"><strong>3</strong><small>veces</small></span>
+            </label>
+            <label>
+              <input type="radio" name="weeklyGoal" value="4">
+              <span class="goal-choice"><strong>4</strong><small>veces</small></span>
+            </label>
+            <label>
+              <input type="radio" name="weeklyGoal" value="5">
+              <span class="goal-choice"><strong>5</strong><small>veces</small></span>
+            </label>
+            <label>
+              <input type="radio" name="weeklyGoal" value="6">
+              <span class="goal-choice"><strong>6</strong><small>veces</small></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="commitment-summary">
+          <span aria-hidden="true">✓</span>
+          <p>Tu racha crecerá cada semana que cumplas el objetivo que elegiste.</p>
+        </div>
+
+        <button id="goalSubmit" class="primary-button onboarding-button" type="submit" disabled>
+          <span>COMENZAR</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <p class="onboarding-note">Si ya usabas ENTRENO, tus entrenamientos y puntos anteriores se conservan.</p>
+    </section>
+  </main>
+
+  <main id="appShell" class="app-shell" hidden>
     <header class="app-header">
       <div>
-        <p class="eyebrow">ENTRENO · V0.2</p>
+        <p class="eyebrow">ENTRENO · V0.3</p>
         <h1>Tu constancia<br>genera progreso.</h1>
       </div>
       <div class="status-dot" aria-label="Aplicación activa"></div>
     </header>
 
-    <section class="hero-card" aria-labelledby="racha-title">
-      <p id="racha-title" class="card-label">Racha actual</p>
+    <section class="hero-card" aria-labelledby="streakTitle">
+      <p id="streakTitle" class="card-label">Racha de constancia</p>
       <div class="streak-line">
         <span class="flame" aria-hidden="true">🔥</span>
         <strong id="streakCount">0</strong>
-        <span id="streakUnit">días</span>
+        <span id="streakUnit">semanas</span>
       </div>
-      <p id="streakMessage" class="muted">Registrá tu próximo entrenamiento.</p>
+      <p id="streakMessage" class="muted">Tu racha empieza cuando completes tu primer objetivo semanal.</p>
     </section>
 
     <section class="goal-card" aria-labelledby="goalTitle">
       <div class="goal-topline">
         <div>
-          <p class="card-label">Objetivo semanal</p>
-          <h2 id="goalTitle">3 entrenamientos</h2>
+          <p class="card-label">Tu objetivo semanal</p>
+          <h2 id="goalTitle">—</h2>
+          <span class="chosen-label">Elegido por vos</span>
         </div>
         <div class="points-pill" aria-label="Puntos acumulados">
           <span aria-hidden="true">★</span>
@@ -45,11 +99,11 @@
       </div>
 
       <div class="goal-progress-row">
-        <strong id="weeklyProgress">0 / 3</strong>
+        <strong id="weeklyProgress">0 / 0</strong>
         <span id="weeklyReward">+100 pts al completar</span>
       </div>
       <div id="goalSegments" class="goal-segments" aria-label="Progreso del objetivo semanal"></div>
-      <p id="weeklyMessage" class="muted goal-message">Tres entrenamientos. Una semana cumplida.</p>
+      <p id="weeklyMessage" class="muted goal-message">Tu semana empieza con un compromiso.</p>
     </section>
 
     <section class="today-card">
@@ -78,13 +132,16 @@
     <details class="settings">
       <summary>Opciones</summary>
       <div class="settings-body">
-        <p>Los entrenamientos y puntos se guardan únicamente en este dispositivo durante esta etapa de prueba.</p>
-        <button id="resetButton" class="secondary-button" type="button">Borrar datos de prueba</button>
+        <p>El objetivo, los entrenamientos y los puntos se guardan únicamente en este dispositivo durante esta etapa de prueba.</p>
+        <div class="settings-actions">
+          <button id="changeGoalButton" class="secondary-button neutral" type="button">Cambiar objetivo semanal</button>
+          <button id="resetButton" class="secondary-button" type="button">Borrar datos de prueba</button>
+        </div>
       </div>
     </details>
 
     <footer>
-      <p>ENTRENO V0.2 · Objetivos + puntos</p>
+      <p>ENTRENO V0.3 · Tu objetivo, tu constancia</p>
     </footer>
   </main>
 
