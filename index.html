@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111315">
+  <meta name="description" content="ENTRENO: registrá tu entrenamiento diario y construí constancia.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>ENTRENO</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ENTRENO · V0.1</p>
+        <h1>Tu constancia<br>empieza hoy.</h1>
+      </div>
+      <div class="status-dot" aria-label="Aplicación activa"></div>
+    </header>
+
+    <section class="hero-card" aria-labelledby="racha-title">
+      <p id="racha-title" class="card-label">Racha actual</p>
+      <div class="streak-line">
+        <span class="flame" aria-hidden="true">🔥</span>
+        <strong id="streakCount">0</strong>
+        <span id="streakUnit">días</span>
+      </div>
+      <p id="streakMessage" class="muted">Registrá tu primer entrenamiento.</p>
+    </section>
+
+    <section class="today-card">
+      <div>
+        <p class="card-label">Hoy</p>
+        <p id="todayLabel" class="today-date">—</p>
+      </div>
+      <div id="todayBadge" class="badge">Pendiente</div>
+    </section>
+
+    <button id="trainButton" class="primary-button" type="button">
+      <span>ENTRENÉ HOY</span>
+      <span aria-hidden="true">＋</span>
+    </button>
+
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+
+    <section class="history-section" aria-labelledby="historyTitle">
+      <div class="section-heading">
+        <h2 id="historyTitle">Últimos 7 días</h2>
+        <span id="totalCount" class="mini-stat">0 entrenamientos</span>
+      </div>
+      <div id="weekGrid" class="week-grid" aria-label="Historial de los últimos siete días"></div>
+    </section>
+
+    <details class="settings">
+      <summary>Opciones</summary>
+      <div class="settings-body">
+        <p>Los datos se guardan únicamente en este dispositivo.</p>
+        <button id="resetButton" class="secondary-button" type="button">Borrar datos de prueba</button>
+      </div>
+    </details>
+
+    <footer>
+      <p>ENTRENO V0.1 · PWA local-first</p>
+    </footer>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
