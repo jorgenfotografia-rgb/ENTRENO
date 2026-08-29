@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111315">
-  <meta name="description" content="ENTRENO: registrá tu entrenamiento diario y construí constancia.">
+  <meta name="description" content="ENTRENO: convertí tu constancia en progreso. Objetivos semanales, rachas y puntos.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -15,8 +15,8 @@
   <main class="app-shell">
     <header class="app-header">
       <div>
-        <p class="eyebrow">ENTRENO · V0.1</p>
-        <h1>Tu constancia<br>empieza hoy.</h1>
+        <p class="eyebrow">ENTRENO · V0.2</p>
+        <h1>Tu constancia<br>genera progreso.</h1>
       </div>
       <div class="status-dot" aria-label="Aplicación activa"></div>
     </header>
@@ -28,7 +28,28 @@
         <strong id="streakCount">0</strong>
         <span id="streakUnit">días</span>
       </div>
-      <p id="streakMessage" class="muted">Registrá tu primer entrenamiento.</p>
+      <p id="streakMessage" class="muted">Registrá tu próximo entrenamiento.</p>
+    </section>
+
+    <section class="goal-card" aria-labelledby="goalTitle">
+      <div class="goal-topline">
+        <div>
+          <p class="card-label">Objetivo semanal</p>
+          <h2 id="goalTitle">3 entrenamientos</h2>
+        </div>
+        <div class="points-pill" aria-label="Puntos acumulados">
+          <span aria-hidden="true">★</span>
+          <strong id="pointsBalance">0</strong>
+          <span>pts</span>
+        </div>
+      </div>
+
+      <div class="goal-progress-row">
+        <strong id="weeklyProgress">0 / 3</strong>
+        <span id="weeklyReward">+100 pts al completar</span>
+      </div>
+      <div id="goalSegments" class="goal-segments" aria-label="Progreso del objetivo semanal"></div>
+      <p id="weeklyMessage" class="muted goal-message">Tres entrenamientos. Una semana cumplida.</p>
     </section>
 
     <section class="today-card">
@@ -57,13 +78,13 @@
     <details class="settings">
       <summary>Opciones</summary>
       <div class="settings-body">
-        <p>Los datos se guardan únicamente en este dispositivo.</p>
+        <p>Los entrenamientos y puntos se guardan únicamente en este dispositivo durante esta etapa de prueba.</p>
         <button id="resetButton" class="secondary-button" type="button">Borrar datos de prueba</button>
       </div>
     </details>
 
     <footer>
-      <p>ENTRENO V0.1 · PWA local-first</p>
+      <p>ENTRENO V0.2 · Objetivos + puntos</p>
     </footer>
   </main>
 
