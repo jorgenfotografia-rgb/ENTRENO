@@ -1,25 +1,34 @@
-# ENTRENO V0.1
+# ENTRENO V0.2
 
-Primera PWA funcional del proyecto **ENTRENO**.
+PWA funcional del proyecto **ENTRENO**.
 
 ## Qué hace
 
 - Registra como máximo un entrenamiento por día.
-- Guarda el historial en `localStorage`.
+- Conserva los registros creados en V0.1.
 - Calcula una racha diaria simple.
+- Define una meta semanal fija de **3 entrenamientos** (lunes a domingo).
+- Muestra progreso semanal **0/3, 1/3, 2/3, 3/3**.
+- Otorga **100 puntos** una sola vez al completar la meta semanal.
+- Guarda entrenamientos, semanas premiadas y puntos en `localStorage`.
 - Muestra los últimos 7 días.
-- Funciona como PWA instalable.
-- Incluye service worker para funcionamiento offline básico.
-- No requiere servidor, base de datos ni cuenta de usuario.
+- Funciona como PWA instalable y con soporte offline básico.
+- No requiere servidor, base de datos ni cuenta de usuario en esta etapa.
 
 ## Publicación
 
-Este repositorio está preparado para publicarse con GitHub Pages desde la rama `main` y la carpeta raíz `/`.
+GitHub Pages publica este repositorio desde la rama `main` y la carpeta raíz `/`.
 
-## Próxima versión sugerida
+## Regla de prueba V0.2
 
-**V0.2**
-- objetivo semanal,
-- progreso 0/3, 1/3, 2/3, 3/3,
-- puntos al cumplir el objetivo,
-- primera lógica de recompensa.
+**3 entrenamientos en una semana = +100 puntos.**
+
+La semana se considera de lunes a domingo y la recompensa de una semana no puede duplicarse aunque la app se cierre o se vuelva a abrir.
+
+## Próximo escalón posible
+
+- objetivo semanal configurable,
+- historial de semanas,
+- catálogo de recompensas de prueba,
+- primera acción de canje,
+- posteriormente usuarios y base de datos sincronizada.
