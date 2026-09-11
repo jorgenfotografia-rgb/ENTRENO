@@ -1,4 +1,4 @@
-# PITBULL ACADEMY · PRODUCT QUALITY PASS 02
+# PITBULL ACADEMY · PRODUCT QUALITY PASS 03
 
 PWA mobile-first para entrenamiento comercial de vendedores de suplementación.
 
@@ -8,6 +8,15 @@ PWA mobile-first para entrenamiento comercial de vendedores de suplementación.
 - La interfaz prioriza claridad, jerarquía y sensación de app antes que recursos de campaña.
 - Tiby The Boss aparece sólo en momentos de alto valor: Boss Check y Boss Review.
 
+## Quality Pass 03
+- Pantalla 00 de acceso integrada: `PITBULL ACADEMY → ENTRAR`.
+- El encabezado de cada caso pasa a `CASO 03 DE 06`, separando el caso actual del progreso completado del módulo.
+- `RESOLVER CASO · cuando estés listo` se reemplaza por una acción siempre disponible: `RESOLVER AHORA →`.
+- Tras dos intervenciones, la acción escala visualmente a `TOMAR DECISIÓN →`.
+- La conversación deja de saltar al inicio después de cada respuesta y acompaña automáticamente el último intercambio.
+- Se mantiene intacto el scoring y la lógica pedagógica.
+- Persistencia local y reanudación continúan activas.
+
 ## Quality Pass 02
 - Packshot restaurado en la ficha de producto.
 - Indicador superior convertido en progreso real del módulo (0/6 → 6/6).
@@ -15,8 +24,6 @@ PWA mobile-first para entrenamiento comercial de vendedores de suplementación.
 - Estados bloqueado / activo / completado refinados para conservar legibilidad.
 - Corrección de microtipografía en la pantalla de consecuencia.
 - Touch targets y estados de foco mejorados.
-- Gameplay y scoring se mantienen sin cambios.
-- Caché PWA actualizado para distribuir los nuevos recursos en instalaciones existentes.
 
 ## Arquitectura
 - `index.html` — shell de la app
