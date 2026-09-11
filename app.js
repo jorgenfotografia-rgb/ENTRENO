@@ -1,353 +1,112 @@
-(() => {
-  "use strict";
+const M=window.MODULE, C=window.CLIENTS;
+const A=id=>`assets/${id}`;
+const KEY='pitbull-academy-quality-pass-01';
+const fresh=()=>({view:'home',current:0,completed:[],chat:[],node:'start',discovered:[],rapport:62,results:[],bossCheck:null,pending:null});
+let S=load();
 
-  const CHECKINS_KEY = "entreno-v01-checkins";
-  const POINTS_KEY = "entreno-v02-points";
-  const AWARDS_KEY = "entreno-v02-awarded-weeks";
-  const GOAL_KEY = "entreno-v03-weekly-goal";
-  const WEEKLY_REWARD = 100;
-  const MIN_GOAL = 2;
-  const MAX_GOAL = 6;
+function load(){try{return Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return fresh()}}
+function save(){localStorage.setItem(KEY,JSON.stringify({...S,discovered:[...S.discovered]}))}
+function reset(){localStorage.removeItem(KEY);S=fresh();render()}
+function tap(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
+function el(id){return document.getElementById(id)}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.hidden=true);el(id).hidden=false;S.view=id;save();window.scrollTo({top:0,behavior:'smooth'})}
+function current(){return C[S.current]}
+function discoveredSet(){return new Set(S.discovered||[])}
 
-  const $ = (selector) => document.querySelector(selector);
+function render(){
+  el('appcode').textContent=`PITBULL ACADEMY · ${M.code}`;
+  el('moduleTitle').textContent=M.title;
+  el('moduleSubtitle').textContent=M.subtitle;
+  el('moduleMeta').textContent=`${M.clients} CLIENTES · ${M.category}`;
+  el('moduleBrand').textContent=M.brand;
+  el('moduleProgress').style.width=`${Math.round((S.completed.length/M.clients)*100)}%`;
+  el('resumeText').textContent=S.completed.length?`${S.completed.length}/${M.clients} clientes completados`:'Listo para comenzar';
+  renderMap();
+  show(S.view && document.getElementById(S.view) ? S.view : 'home');
+}
 
-  const onboarding = $("#onboarding");
-  const appShell = $("#appShell");
-  const onboardingTitle = $("#onboardingTitle");
-  const onboardingLead = $("#onboardingLead");
-  const goalForm = $("#goalForm");
-  const goalSubmit = $("#goalSubmit");
-  const goalInputs = [...document.querySelectorAll('input[name="weeklyGoal"]')];
+function openModule(){tap();show('module')}
+function startModule(){tap();show('map')}
+function renderMap(){
+  el('clientList').innerHTML=C.map((c,i)=>{
+    const done=S.completed.includes(i), unlocked=i<=S.completed.length;
+    return `<button class="cast-item" ${unlocked?'':'disabled'} onclick="startClient(${i})">
+      <img src="${A(c.id+'.jpg')}" alt="">
+      <div><span class="num">${String(i+1).padStart(2,'0')} · ${done?'COMPLETADO':'CLIENTE'}</span><strong>${c.name}</strong><span class="small">${c.label}${i===5?' · Boss Challenge':''}</span></div>
+      <span class="arrow">${done?'✓':unlocked?'→':'·'}</span>
+    </button>`;
+  }).join('');
+}
+function startClient(i){
+  tap();S.current=i;S.chat=[];S.node='start';S.discovered=[];S.rapport=62;S.pending=null;save();
+  const c=current();el('caseAvatar').src=A(c.id+'.jpg');el('caseNum').textContent=`CLIENTE ${String(i+1).padStart(2,'0')} · ${i+1}/6`;
+  el('caseName').textContent=c.name;el('caseAge').textContent=c.age;el('caseLabel').textContent=c.label;el('caseQuote').textContent=`“${c.intro}”`;
+  show('case');
+}
+function beginChat(){tap();const c=current();S.chat=[{who:'client',text:c.intro}];save();renderChat()}
+function rtxt(q){if(q>=8)return['La conversación gana confianza.','good'];if(q<=-15)return['La conversación se enfría.','bad'];if(q<0)return['La pregunta llega algo pronto.','bad'];return['La conversación continúa.','']}
+function renderChat(){
+  const c=current();el('chatAvatar').src=A(c.id+'.jpg');el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;
+  el('thread').innerHTML=S.chat.map(m=>{let rx=m.q!==undefined?rtxt(m.q):null;return `<div class="bubble ${m.who==='client'?'client':'you'}">${m.text}</div>${rx?`<div class="reaction ${rx[1]}">${rx[0]}</div>`:''}`}).join('');
+  const opts=c.nodes[S.node]||[];
+  el('choices').innerHTML=opts.map((o,i)=>`<button class="choice" onclick="chooseLine(${i})">${o.t}</button>`).join('');
+  const turns=S.chat.filter(x=>x.who==='you').length;
+  el('resolve').className='secondary resolve'+(turns<2?' is-early':'');
+  el('resolve').innerHTML=`<span>RESOLVER CASO</span><span>${turns<2?'cuando estés listo':'→'}</span>`;
+  save();show('chat')
+}
+function chooseLine(i){
+  tap();const c=current(),o=c.nodes[S.node][i],d=discoveredSet();
+  S.chat.push({who:'you',text:o.t});S.chat.push({who:'client',text:o.r,q:o.q});o.facts.forEach(f=>d.add(f));S.discovered=[...d];S.rapport=Math.max(0,Math.min(100,S.rapport+o.q));S.node=o.next;save();
+  if(S.rapport<22){lost();return} renderChat()
+}
+function openDecision(){tap();show('decision')}
+function calc(action){
+  const c=current(),d=discoveredSet(),listen=Math.min(100,Math.round([...d].filter(x=>c.facts.includes(x)).length/c.facts.length*100));
+  return {listen,criterion:action===c.answer?100:(action==='ask'&&listen<67?78:35),conversation:S.rapport,recommendation:action===c.answer?100:(action==='ask'&&listen<67?75:30)}
+}
+function decide(action){
+  tap();const c=current(),sc=calc(action),correct=action===c.answer,enough=sc.listen>=67;
+  let strength,title,note,copy;
+  if(correct&&enough&&sc.conversation>=55){strength='good';title='Buena lectura';note='La decisión coincide con el contexto que construiste.';copy=c.reaction.good}
+  else if(correct&&!enough){strength='mid';title='Correcto, demasiado pronto';note='Llegaste a una buena acción con poco contexto.';copy=c.reaction.early}
+  else if(action==='ask'&&!enough){strength='mid';title='Buena pausa';note='Reconociste que todavía faltaba información.';copy=c.reaction.early}
+  else{strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad}
+  S.pending={action,sc,correct,strength,title,note,copy};save();renderReaction()
+}
+function renderReaction(){
+  const c=current(),o=S.pending;el('reactAvatar').src=A(c.id+'.jpg');el('reactName').textContent=c.name;el('clientLine').textContent=`“${o.copy}”`;
+  el('learning').className=`learning ${o.strength}`;el('resultTitle').textContent=o.title;el('resultNote').textContent=o.note;el('learnText').textContent=c.explain;show('reaction')
+}
+function commit(){
+  tap();const c=current(),o=S.pending;S.results.push({i:S.current,name:c.name,action:o.action,correct:o.correct,scores:o.sc});if(!S.completed.includes(S.current))S.completed.push(S.current);S.pending=null;save();
+  if(S.current===2&&S.bossCheck===null){renderBossCheck();return}
+  if(S.current===5){final();return} renderMap();show('map')
+}
+function lost(){
+  const c=current(),sc=calc('lost');S.results.push({i:S.current,name:c.name,action:'lost',correct:false,scores:sc});if(!S.completed.includes(S.current))S.completed.push(S.current);S.pending=null;save();
+  el('reactAvatar').src=A(c.id+'.jpg');el('reactName').textContent=c.name;el('clientLine').textContent='“Lo voy a pensar. Gracias.”';el('learning').className='learning bad';el('resultTitle').textContent='Cliente perdido';el('resultNote').textContent='La conversación se volvió comercial antes de que el cliente sintiera que estabas intentando entenderlo.';el('learnText').textContent='La calidad de una recomendación también depende de cómo construís confianza.';
+  el('reactionNext').onclick=()=>{if(S.current===2&&S.bossCheck===null)renderBossCheck();else if(S.current===5)final();else{renderMap();show('map')}};show('reaction')
+}
+function renderBossCheck(){
+  el('bossCheckImage').src=A('tiby-boss-check.jpg');show('bossCheck')
+}
+function bossAnswer(ok){
+  tap();S.bossCheck=ok;save();el('bossCheckBody').innerHTML=`<div class="boss-hero"><img src="${A('tiby-boss-check.jpg')}" alt=""><div class="boss-copy"><p class="eyebrow">THE BOSS CHECK</p><h2>${ok?'Bien leído.':'Demasiado rápido.'}</h2><p class="muted">${ok?'Dormir cuatro horas obliga a mirar primero la base antes de sumar un producto.':'La carga de entrenamiento no convierte automáticamente a glutamina en la respuesta cuando aparece una base claramente comprometida.'}</p><div class="signature">TIBY · THE BOSS</div></div></div><div class="actions"><button class="primary" onclick="renderMap();show('map')"><span>SEGUIR</span><span>→</span></button></div>`
+}
+function final(){
+  const rs=S.results,avg=k=>Math.round(rs.reduce((a,r)=>a+r.scores[k],0)/Math.max(1,rs.length));
+  let l=avg('listen'),c=avg('criterion'),cv=avg('conversation'),r=avg('recommendation');if(S.bossCheck)c=Math.min(100,c+5);
+  const total=Math.round(l*.27+c*.28+cv*.20+r*.25),rank=total>=90?'ASESOR':total>=80?'DETECTOR':total>=68?'OBSERVADOR':'NOVATO';
+  el('overall').textContent=total;el('sListen').textContent=l;el('sCriterion').textContent=c;el('sConversation').textContent=cv;el('sRecommendation').textContent=r;el('rank').textContent=rank;
+  const w=[['ESCUCHA',l],['CRITERIO',c],['CONVERSACIÓN',cv],['RECOMENDACIÓN',r]].sort((a,b)=>a[1]-b[1])[0][0];
+  const verdict={ESCUCHA:'Sabés decidir mejor de lo que todavía sabés descubrir. Hacé aparecer la información antes de cerrar.',CRITERIO:'Escuchás señales, pero falta convertirlas en una decisión más precisa.',CONVERSACIÓN:'La lectura está, pero algunas preguntas llegan antes de tiempo.',RECOMENDACIÓN:'Entendés al cliente; ahora afiná la acción final.'}[w];
+  el('reviewImage').src=A('tiby-boss-review.jpg');el('verdict').textContent=`“${verdict}”`;save();show('final')
+}
+function review(){
+  const labels={glutamine:'Glutamina',other:'Otra categoría',none:'Todavía no',ask:'Preguntar más',lost:'Cliente perdido'};
+  el('reviewList').innerHTML=S.results.map((x,i)=>{const n=Math.round((x.scores.listen+x.scores.criterion+x.scores.conversation+x.scores.recommendation)/4);return `<div class="review-item"><div class="review-top"><strong>${String(i+1).padStart(2,'0')} · ${x.name}</strong><span class="review-score">${n}</span></div><p class="small">${labels[x.action]||x.action} · ${x.correct?'lectura correcta':'a revisar'}</p></div>`}).join('');show('review')
+}
+window.addEventListener('DOMContentLoaded',render);
 
-  const streakCount = $("#streakCount");
-  const streakUnit = $("#streakUnit");
-  const streakMessage = $("#streakMessage");
-  const goalTitle = $("#goalTitle");
-  const pointsBalance = $("#pointsBalance");
-  const weeklyProgress = $("#weeklyProgress");
-  const weeklyReward = $("#weeklyReward");
-  const weeklyMessage = $("#weeklyMessage");
-  const goalSegments = $("#goalSegments");
-  const todayLabel = $("#todayLabel");
-  const todayBadge = $("#todayBadge");
-  const trainButton = $("#trainButton");
-  const feedback = $("#feedback");
-  const weekGrid = $("#weekGrid");
-  const totalCount = $("#totalCount");
-  const changeGoalButton = $("#changeGoalButton");
-  const resetButton = $("#resetButton");
-
-  const pad = (n) => String(n).padStart(2, "0");
-
-  function localDateKey(date = new Date()) {
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  }
-
-  function dateFromKey(key) {
-    const [year, month, day] = key.split("-").map(Number);
-    return new Date(year, month - 1, day, 12, 0, 0, 0);
-  }
-
-  function addDays(date, amount) {
-    const copy = new Date(date);
-    copy.setDate(copy.getDate() + amount);
-    return copy;
-  }
-
-  function startOfWeek(date = new Date()) {
-    const copy = new Date(date);
-    copy.setHours(12, 0, 0, 0);
-    const daysSinceMonday = (copy.getDay() + 6) % 7;
-    return addDays(copy, -daysSinceMonday);
-  }
-
-  function currentWeekKey(date = new Date()) {
-    return localDateKey(startOfWeek(date));
-  }
-
-  function loadGoal() {
-    const value = Number.parseInt(localStorage.getItem(GOAL_KEY) || "", 10);
-    return Number.isInteger(value) && value >= MIN_GOAL && value <= MAX_GOAL ? value : null;
-  }
-
-  function saveGoal(value) {
-    const safe = Math.min(MAX_GOAL, Math.max(MIN_GOAL, Math.floor(value)));
-    localStorage.setItem(GOAL_KEY, String(safe));
-    return safe;
-  }
-
-  function loadCheckins() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(CHECKINS_KEY) || "[]");
-      if (!Array.isArray(raw)) return [];
-      return [...new Set(raw.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value)))].sort();
-    } catch {
-      return [];
-    }
-  }
-
-  function saveCheckins(items) {
-    localStorage.setItem(CHECKINS_KEY, JSON.stringify(items));
-  }
-
-  function loadPoints() {
-    const parsed = Number.parseInt(localStorage.getItem(POINTS_KEY) || "0", 10);
-    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-  }
-
-  function savePoints(value) {
-    localStorage.setItem(POINTS_KEY, String(Math.max(0, Math.floor(value))));
-  }
-
-  function loadAwardedWeeks() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(AWARDS_KEY) || "[]");
-      if (!Array.isArray(raw)) return [];
-      return [...new Set(raw.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value)))].sort();
-    } catch {
-      return [];
-    }
-  }
-
-  function saveAwardedWeeks(items) {
-    localStorage.setItem(AWARDS_KEY, JSON.stringify(items));
-  }
-
-  function getCurrentWeekCheckins(checkins, date = new Date()) {
-    const start = startOfWeek(date);
-    const end = addDays(start, 6);
-    const startKey = localDateKey(start);
-    const endKey = localDateKey(end);
-    return checkins.filter((key) => key >= startKey && key <= endKey);
-  }
-
-  function calculateWeeklyStreak(awardedWeeks) {
-    const set = new Set(awardedWeeks);
-    const thisWeek = startOfWeek(new Date());
-    const previousWeek = addDays(thisWeek, -7);
-
-    let cursor;
-    if (set.has(localDateKey(thisWeek))) cursor = thisWeek;
-    else if (set.has(localDateKey(previousWeek))) cursor = previousWeek;
-    else return 0;
-
-    let count = 0;
-    while (set.has(localDateKey(cursor))) {
-      count += 1;
-      cursor = addDays(cursor, -7);
-      if (count > 520) break;
-    }
-    return count;
-  }
-
-  function awardCurrentWeekIfEligible(checkins, goal) {
-    const progress = getCurrentWeekCheckins(checkins).length;
-    if (progress < goal) return 0;
-
-    const weekKey = currentWeekKey();
-    const awardedWeeks = loadAwardedWeeks();
-    if (awardedWeeks.includes(weekKey)) return 0;
-
-    awardedWeeks.push(weekKey);
-    awardedWeeks.sort();
-    saveAwardedWeeks(awardedWeeks);
-    savePoints(loadPoints() + WEEKLY_REWARD);
-    return WEEKLY_REWARD;
-  }
-
-  function formatLongDate(date) {
-    return new Intl.DateTimeFormat("es-AR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long"
-    }).format(date);
-  }
-
-  function renderGoal(checkins, goal) {
-    const progress = getCurrentWeekCheckins(checkins).length;
-    const cappedProgress = Math.min(progress, goal);
-    const awarded = loadAwardedWeeks().includes(currentWeekKey());
-    const remaining = Math.max(goal - progress, 0);
-
-    goalTitle.textContent = `${goal} ${goal === 1 ? "entrenamiento" : "entrenamientos"}`;
-    pointsBalance.textContent = String(loadPoints());
-    weeklyProgress.textContent = `${cappedProgress} / ${goal}`;
-    weeklyReward.textContent = awarded ? "Recompensa obtenida ✓" : `+${WEEKLY_REWARD} pts al completar`;
-
-    goalSegments.style.setProperty("--goal-count", String(goal));
-    goalSegments.innerHTML = Array.from({ length: goal }, (_, index) => {
-      const filled = index < cappedProgress;
-      return `<span class="goal-segment${filled ? " filled" : ""}" aria-hidden="true"></span>`;
-    }).join("");
-
-    goalSegments.setAttribute(
-      "aria-label",
-      `${cappedProgress} de ${goal} entrenamientos completados esta semana`
-    );
-
-    if (remaining === 0) {
-      weeklyMessage.textContent = "Semana cumplida. Cumpliste lo que te propusiste.";
-    } else if (remaining === 1) {
-      weeklyMessage.textContent = "Te falta 1 entrenamiento para cumplir tu objetivo.";
-    } else {
-      weeklyMessage.textContent = `Te faltan ${remaining} entrenamientos para cumplir tu objetivo.`;
-    }
-  }
-
-  function renderWeek(checkins) {
-    const set = new Set(checkins);
-    const today = new Date();
-    const cells = [];
-
-    for (let offset = -6; offset <= 0; offset += 1) {
-      const date = addDays(today, offset);
-      const key = localDateKey(date);
-      const done = set.has(key);
-      const isToday = offset === 0;
-      const dow = new Intl.DateTimeFormat("es-AR", { weekday: "short" })
-        .format(date)
-        .replace(".", "");
-
-      cells.push(`
-        <div class="day-cell${done ? " done" : ""}${isToday ? " today" : ""}"
-             aria-label="${formatLongDate(date)}: ${done ? "entrenamiento registrado" : "sin entrenamiento"}">
-          <span class="dow">${dow}</span>
-          <span class="date-num">${date.getDate()}</span>
-        </div>
-      `);
-    }
-
-    weekGrid.innerHTML = cells.join("");
-  }
-
-  function showOnboarding(editing = false) {
-    const currentGoal = loadGoal();
-    appShell.hidden = true;
-    onboarding.hidden = false;
-    onboarding.dataset.mode = editing ? "edit" : "first";
-
-    onboardingTitle.textContent = editing
-      ? "¿Cuántas veces querés entrenar por semana?"
-      : "¿Cuántas veces querés entrenar por semana?";
-
-    onboardingLead.textContent = editing
-      ? "Ajustá tu compromiso a una frecuencia que puedas sostener."
-      : "Elegí un objetivo que puedas sostener. Descansar también forma parte del entrenamiento.";
-
-    goalInputs.forEach((input) => {
-      input.checked = currentGoal !== null && Number(input.value) === currentGoal;
-    });
-
-    goalSubmit.disabled = currentGoal === null;
-    goalSubmit.querySelector("span:first-child").textContent = editing ? "GUARDAR OBJETIVO" : "COMENZAR";
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }
-
-  function showApp(message = "") {
-    onboarding.hidden = true;
-    appShell.hidden = false;
-    render(message);
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }
-
-  function render(message = "") {
-    const goal = loadGoal();
-    if (goal === null) {
-      showOnboarding(false);
-      return;
-    }
-
-    const checkins = loadCheckins();
-    const rewardGained = awardCurrentWeekIfEligible(checkins, goal);
-    const today = new Date();
-    const todayKey = localDateKey(today);
-    const doneToday = checkins.includes(todayKey);
-    const weeklyStreak = calculateWeeklyStreak(loadAwardedWeeks());
-
-    todayLabel.textContent = formatLongDate(today);
-    todayBadge.textContent = doneToday ? "Completado" : "Pendiente";
-    todayBadge.classList.toggle("done", doneToday);
-
-    streakCount.textContent = String(weeklyStreak);
-    streakUnit.textContent = weeklyStreak === 1 ? "semana" : "semanas";
-
-    if (weeklyStreak === 0) {
-      streakMessage.textContent = "Tu racha empieza cuando completes tu primer objetivo semanal.";
-    } else if (weeklyStreak === 1) {
-      streakMessage.textContent = "Primera semana cumplida. Tu racha de constancia empezó.";
-    } else {
-      streakMessage.textContent = `${weeklyStreak} semanas cumpliendo lo que te propusiste.`;
-    }
-
-    trainButton.disabled = doneToday;
-    trainButton.innerHTML = doneToday
-      ? "<span>ENTRENAMIENTO REGISTRADO</span><span aria-hidden='true'>✓</span>"
-      : "<span>ENTRENÉ HOY</span><span aria-hidden='true'>＋</span>";
-
-    totalCount.textContent = `${checkins.length} ${checkins.length === 1 ? "entrenamiento" : "entrenamientos"}`;
-
-    renderGoal(checkins, goal);
-    renderWeek(checkins);
-
-    feedback.textContent = rewardGained
-      ? `Objetivo semanal cumplido. +${rewardGained} puntos. ⭐`
-      : message;
-  }
-
-  goalInputs.forEach((input) => {
-    input.addEventListener("change", () => {
-      goalSubmit.disabled = false;
-    });
-  });
-
-  goalForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const selected = goalInputs.find((input) => input.checked);
-    if (!selected) return;
-
-    const editing = onboarding.dataset.mode === "edit";
-    const goal = saveGoal(Number(selected.value));
-    showApp(editing
-      ? `Objetivo actualizado: ${goal} entrenamientos por semana.`
-      : `Tu compromiso empieza con ${goal} entrenamientos por semana.`
-    );
-  });
-
-  trainButton.addEventListener("click", () => {
-    const checkins = loadCheckins();
-    const todayKey = localDateKey();
-
-    if (!checkins.includes(todayKey)) {
-      checkins.push(todayKey);
-      checkins.sort();
-      saveCheckins(checkins);
-      render("Entrenamiento de hoy registrado. 🔥");
-    } else {
-      render("Ya registraste el entrenamiento de hoy.");
-    }
-  });
-
-  changeGoalButton.addEventListener("click", () => {
-    showOnboarding(true);
-  });
-
-  resetButton.addEventListener("click", () => {
-    const confirmed = window.confirm("¿Borrar objetivo, entrenamientos, semanas cumplidas y puntos de este dispositivo?");
-    if (!confirmed) return;
-
-    localStorage.removeItem(CHECKINS_KEY);
-    localStorage.removeItem(POINTS_KEY);
-    localStorage.removeItem(AWARDS_KEY);
-    localStorage.removeItem(GOAL_KEY);
-    showOnboarding(false);
-  });
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
-    });
-  }
-
-  if (loadGoal() === null) showOnboarding(false);
-  else showApp();
-})();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));}
