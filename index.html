@@ -44,6 +44,42 @@
       <div id="resumeText" class="resume"></div>
       <div class="actions"><button class="primary" onclick="openModule()"><span>ENTRAR AL MÓDULO</span><span>→</span></button></div>
     </div>
+    <button class="catalog-entry" onclick="openCatalog()">
+      <span><small>CATÁLOGO DE ENTRENAMIENTO</small><strong><span id="productCount">8</span> productos Pitbull incorporados</strong></span>
+      <span class="catalog-arrow">→</span>
+    </button>
+  </section>
+
+  <section id="catalog" class="screen" hidden>
+    <p class="eyebrow">BIBLIOTECA DE PRODUCTOS</p>
+    <h2>Lo que podemos entrenar.</h2>
+    <p class="muted">La marca vive dentro del contenido. Cada producto puede convertirse en un módulo cuando su criterio comercial esté documentado.</p>
+    <div id="productList" class="product-list"></div>
+    <div class="actions"><button class="tertiary" onclick="show('home')"><span>VOLVER</span><span>←</span></button></div>
+  </section>
+
+  <section id="product" class="screen" hidden>
+    <p class="eyebrow">FICHA ACADEMY</p>
+    <div class="product-detail-card">
+      <div class="product-detail-media"><img id="productImage" alt=""></div>
+      <div class="product-detail-head">
+        <p id="productBrand" class="eyebrow"></p>
+        <h2 id="productName"></h2>
+        <div id="productStatus" class="product-status"></div>
+      </div>
+    </div>
+    <p id="productSummary" class="product-summary"></p>
+    <div class="product-facts">
+      <div><span>CATEGORÍA</span><strong id="productCategory"></strong></div>
+      <div><span>PRESENTACIÓN</span><strong id="productPresentation"></strong></div>
+      <div><span>FORMATO</span><strong id="productFormat"></strong></div>
+      <div><span>SABORES</span><strong id="productFlavors"></strong></div>
+    </div>
+    <p class="provisional">Base de producto incorporada desde Nutribull. La información de entrenamiento se audita antes de habilitar cada módulo.</p>
+    <div class="actions">
+      <button id="productModuleButton" class="secondary" onclick="openProductModule()"><span>MÓDULO EN PREPARACIÓN</span><span>→</span></button>
+      <button class="tertiary" onclick="openCatalog()"><span>VOLVER A PRODUCTOS</span><span>←</span></button>
+    </div>
   </section>
 
   <section id="module" class="screen" hidden>
@@ -154,6 +190,7 @@
     <div class="actions"><button class="secondary" onclick="show('final')"><span>VOLVER AL RESULTADO</span><span>←</span></button></div>
   </section>
 </main>
+<script src="data/products.js"></script>
 <script src="data/module.js"></script>
 <script src="data/clients.js"></script>
 <script src="app.js"></script>
