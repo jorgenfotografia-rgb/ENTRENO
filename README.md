@@ -1,4 +1,4 @@
-# PITBULL ACADEMY · CORE V1
+# PITBULL ACADEMY · CORE V1.1 PRE-PILOT
 
 PWA mobile-first para entrenamiento comercial de vendedores de suplementación.
 
@@ -13,31 +13,30 @@ Pitbull Academy es la plataforma interna de formación comercial de Pitbull Supl
 - Tiby The Boss aparece sólo en momentos de alto valor: Boss Check y Boss Review.
 - Incorporar un producto a la biblioteca no equivale a aprobar su información técnica para entrenamiento.
 
-## Academy Core V1
-- Home generalizada: deja de presentarse como una experiencia centrada en Glutamina.
-- El progreso superior sólo aparece dentro de un módulo; Home y Biblioteca pertenecen al nivel general de Academy.
-- Biblioteca multimarca con registro separado de marcas y productos.
-- Filtro por marca preparado para escalar cuando ingresen nuevas marcas.
-- Fichas de producto separan datos de catálogo de control informativo.
-- Registro de fuentes para distinguir referencias de catálogo de fuentes técnicas auditadas.
-- Registro de módulos independiente de productos.
-- Motor de decisiones generalizado con acciones reutilizables: preguntar más, recomendar producto, orientar a otra categoría o no suplementar todavía.
-- Estado de progreso separado por módulo y migración automática del progreso previo de M01.
-- M01 Glutamina se conserva como primer módulo activo, no como arquitectura de la aplicación.
+## Core V1.1 · PRE-PILOT
+- Home generalizada y continuidad real del entrenamiento: si un módulo ya comenzó, **Continuar entrenamiento** retoma el punto útil y no vuelve innecesariamente a la introducción.
+- Protección de casos completados: ya no reinician el caso ni duplican resultados; pasan a una vista de **revisión de caso**.
+- Resultados deduplicados por caso para proteger el scoring.
+- Migración reforzada: durante la transición conserva el progreso válido más avanzado entre el estado legacy y `moduleProgress`, y después elimina la duplicación legacy.
+- M01 reformulado con lenguaje prudente: **evaluar glutamina** como posible complemento no equivale a recomendarla automáticamente ni a prometer un resultado.
+- Registro de fuentes técnicas para M01, separado de la fuente de catálogo.
+- Pantalla final preparada para piloto con nombre/alias, duración y **Compartir resultado**.
+- Reinicio limitado al módulo activo en lugar de borrar toda la experiencia.
 
 ## Arquitectura
 - `index.html` — shell de Academy y pantallas.
 - `styles.css` — sistema visual base.
-- `core-v1.css` — capa de interfaz general / multimarca.
-- `app.js` — navegación, persistencia, motor de módulos, scoring y biblioteca.
+- `core-v1.css` — capa de interfaz general / multimarca / PRE-PILOT.
+- `app.js` — navegación, persistencia, motor de módulos, scoring, biblioteca y salida de piloto.
 - `data/brands.js` — registro de marcas.
 - `data/products.js` — catálogo de productos sin lógica pedagógica.
 - `data/modules.js` — competencias, acciones y relaciones módulo-producto.
 - `data/sources.js` — registro y rol de las fuentes.
-- `data/scenarios/m01.js` — configuración del escenario M01 y Boss Check.
+- `data/scenarios/m01.js` — configuración pedagógica del escenario M01 y Boss Check.
 - `data/clients.js` — dataset conversacional heredado de M01; se mantiene como capa compatible durante la migración.
 - `manifest.webmanifest` + `service-worker.js` — instalación PWA y caché offline.
 - `assets/` — producto, Tiby, iconos y sistema visual de clientes.
+- `docs/PRE-PILOT-V1.1.md` — protocolo del piloto con tres vendedores.
 
 ## Biblioteca actual
 La primera carga contiene productos Pitbull Suplementos obtenidos como base de catálogo desde Nutribull. La arquitectura permite incorporar Star Nutrition, ENA, Optimum Nutrition, BSN u otras marcas sin modificar el motor de Academy.
@@ -48,11 +47,21 @@ Flujo objetivo para contenido formativo:
 
 Las fuentes tipo retailer pueden servir para inventario, presentación, sabores e imágenes. Claims, funciones, recomendaciones y criterios de uso deben pasar por auditoría documental antes de convertirse en material formativo definitivo.
 
-## M01
-`Detectá la oportunidad` continúa siendo el único módulo activo. Utiliza Glutamina como producto de referencia para entrenar detección de necesidad, cambio de categoría y reconocimiento de bases insuficientes.
+## M01 · Detectá la oportunidad
+M01 continúa siendo el único módulo activo. Utiliza Glutamina como producto de referencia para entrenar detección de necesidad, cambio de categoría, reconocimiento de bases insuficientes y la diferencia entre **evaluar un producto** y **convertirlo en respuesta automática**.
+
+Para PRE-PILOT, el contenido se revisó con fuentes técnicas que reportan resultados heterogéneos y evidencia insuficiente para justificar recomendaciones rutinarias de glutamina con fines de rendimiento/recuperación. Por eso Academy no presenta el producto como una solución garantizada ni como indicación clínica.
 
 ## Persistencia
-El progreso se guarda localmente por dispositivo. Core V1 migra automáticamente el progreso histórico del módulo inicial al nuevo esquema `moduleProgress`, evitando reiniciar el avance de los usuarios existentes.
+El progreso se guarda localmente por dispositivo. Core V1.1 protege el avance durante la migración desde versiones anteriores, deduplica resultados y separa el progreso por módulo.
+
+## Piloto
+Objetivo inicial: probar M01 con 3 vendedores y observar:
+1. si pueden completar la experiencia sin explicación externa;
+2. si mejora su lectura de casos;
+3. si transfieren el criterio a situaciones nuevas de mostrador.
+
+Ver `docs/PRE-PILOT-V1.1.md`.
 
 ## URL
 `https://jorgenfotografia-rgb.github.io/pitbull-academy/`
