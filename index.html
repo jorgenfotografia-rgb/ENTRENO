@@ -11,6 +11,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<section id="splash" class="splash" aria-label="Pitbull Academy">
+  <div class="splash-orbit" aria-hidden="true"></div>
+  <div class="splash-center">
+    <div class="splash-wordmark">
+      <strong>PITBULL</strong>
+      <span>ACADEMY</span>
+    </div>
+    <button class="splash-enter" onclick="enterAcademy()" aria-label="Entrar a Pitbull Academy">
+      <span>ENTRAR</span><span aria-hidden="true">→</span>
+    </button>
+  </div>
+</section>
+
 <main class="app">
   <div class="topline">
     <div id="appcode" class="appcode">PITBULL ACADEMY · M01</div>
@@ -144,5 +157,14 @@
 <script src="data/module.js"></script>
 <script src="data/clients.js"></script>
 <script src="app.js"></script>
+<script>
+function enterAcademy(){
+  const splash=document.getElementById('splash');
+  if(!splash)return;
+  try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}
+  splash.classList.add('splash-out');
+  setTimeout(()=>{splash.hidden=true},260);
+}
+</script>
 </body>
 </html>
