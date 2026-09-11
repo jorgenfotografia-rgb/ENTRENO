@@ -52,9 +52,27 @@
     }
   };
 
-  // PRE-PILOT V1.1.1 · microajustes de conversación y mapa.
+  // PRE-PILOT V1.1.2 · microajustes de conversación y mapa.
   // Se aplican al cargar para mantener la lógica general de Academy intacta.
   window.addEventListener('DOMContentLoaded',()=>{
+    const sanitizeChat=chat=>{
+      const source=Array.isArray(chat)?chat:[],out=[],seenUserLines=new Set();
+      for(let i=0;i<source.length;i++){
+        const m=source[i];
+        if(m?.who==='you'){
+          const key=(m.text||'').trim();
+          const next=source[i+1];
+          if(key&&seenUserLines.has(key)){
+            if(next?.who==='client')i++;
+            continue;
+          }
+          if(key)seenUserLines.add(key);
+        }
+        out.push(m);
+      }
+      return out;
+    };
+
     window.renderMap=function(){
       const m=activeModule(),clients=C(),p=MP();if(!m||!el('clientList'))return;updateMeter();
       el('mapMeta').textContent=`SIMULADOR · ${clients.length} CASOS`;
@@ -80,11 +98,14 @@
     };
 
     window.renderChat=function({scroll=true,follow=false}={}){
-      const p=MP(),c=current();setPhoto('chatAvatar',c);el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;
+      const p=MP(),c=current();
+      const cleaned=sanitizeChat(p.chat);
+      if(cleaned.length!==p.chat.length){p.chat=cleaned;save()}
+      setPhoto('chatAvatar',c);el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;
       el('thread').innerHTML=p.chat.map(m=>{const rx=m.q!==undefined?rtxt(m.q):null;return `<div class="bubble ${m.who==='client'?'client':'you'}">${m.text}</div>${rx?`<div class="reaction ${rx[1]}">${rx[0]}</div>`:''}`}).join('');
-      const used=new Set(p.chat.filter(x=>x.who==='you').map(x=>x.text));
+      const used=new Set(p.chat.filter(x=>x.who==='you').map(x=>(x.text||'').trim()));
       const raw=c.nodes[p.node]||[];
-      const opts=raw.map((o,idx)=>({o,idx})).filter(({o})=>!used.has(o.t));
+      const opts=raw.map((o,idx)=>({o,idx})).filter(({o})=>!used.has((o.t||'').trim()));
       el('choices').innerHTML=opts.map(({o,idx})=>`<button class="choice" onclick="chooseLine(${idx})">${o.t}</button>`).join('');
       const turns=p.chat.filter(x=>x.who==='you').length,ready=turns>=2;
       el('resolve').className=(ready?'primary':'secondary')+' resolve';
@@ -94,8 +115,9 @@
 
     window.chooseLine=function(i){
       tap();const p=MP(),c=current(),raw=c.nodes[p.node]||[],o=raw[i];if(!o)return;
-      const alreadyUsed=p.chat.some(m=>m.who==='you'&&m.text===o.t);
-      if(alreadyUsed){renderChat({scroll:false});return}
+      p.chat=sanitizeChat(p.chat);
+      const alreadyUsed=p.chat.some(m=>m.who==='you'&&(m.text||'').trim()===(o.t||'').trim());
+      if(alreadyUsed){save();renderChat({scroll:false});return}
       const d=discoveredSet();
       p.chat.push({who:'you',text:o.t});p.chat.push({who:'client',text:o.r,q:o.q});
       (o.facts||[]).forEach(f=>d.add(f));p.discovered=[...d];p.rapport=Math.max(0,Math.min(100,p.rapport+o.q));p.node=o.next;save();
