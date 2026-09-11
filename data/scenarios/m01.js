@@ -51,4 +51,56 @@
       }
     }
   };
+
+  // PRE-PILOT V1.1.1 · microajustes de conversación y mapa.
+  // Se aplican al cargar para mantener la lógica general de Academy intacta.
+  window.addEventListener('DOMContentLoaded',()=>{
+    window.renderMap=function(){
+      const m=activeModule(),clients=C(),p=MP();if(!m||!el('clientList'))return;updateMeter();
+      el('mapMeta').textContent=`SIMULADOR · ${clients.length} CASOS`;
+      el('clientList').innerHTML=clients.map((c,i)=>{
+        const done=p.completed.includes(i),unlocked=i<=p.completed.length;
+        const action=done?`reviewCompletedCase(${i})`:`startClient(${i})`;
+        return `<button class="cast-item ${done?'is-complete':''}" ${unlocked?'':'disabled'} onclick="${action}">
+          <img class="client-photo" src="${A(c.id+'.svg')}" alt="${c.name}">
+          <div><span class="num">${String(i+1).padStart(2,'0')} · ${done?'COMPLETADO':'CLIENTE'}</span><strong>${c.name}</strong><span class="small">${c.label}${!done&&c.bossChallenge?' · Boss Challenge':''}</span>${done?'<span class="review-tag">REVISAR CASO</span>':''}</div>
+          <span class="arrow">${done?'✓':unlocked?'→':'·'}</span>
+        </button>`;
+      }).join('');
+    };
+
+    window.followConversation=function(){
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const thread=el('thread');if(!thread)return;
+        const replies=[...thread.querySelectorAll('.bubble.client')],last=replies[replies.length-1];if(!last)return;
+        const rect=last.getBoundingClientRect();
+        const offset=Math.max(110,Math.min(180,window.innerHeight*.18));
+        window.scrollTo({top:Math.max(0,window.scrollY+rect.top-offset),behavior:'smooth'});
+      }));
+    };
+
+    window.renderChat=function({scroll=true,follow=false}={}){
+      const p=MP(),c=current();setPhoto('chatAvatar',c);el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;
+      el('thread').innerHTML=p.chat.map(m=>{const rx=m.q!==undefined?rtxt(m.q):null;return `<div class="bubble ${m.who==='client'?'client':'you'}">${m.text}</div>${rx?`<div class="reaction ${rx[1]}">${rx[0]}</div>`:''}`}).join('');
+      const used=new Set(p.chat.filter(x=>x.who==='you').map(x=>x.text));
+      const raw=c.nodes[p.node]||[];
+      const opts=raw.map((o,idx)=>({o,idx})).filter(({o})=>!used.has(o.t));
+      el('choices').innerHTML=opts.map(({o,idx})=>`<button class="choice" onclick="chooseLine(${idx})">${o.t}</button>`).join('');
+      const turns=p.chat.filter(x=>x.who==='you').length,ready=turns>=2;
+      el('resolve').className=(ready?'primary':'secondary')+' resolve';
+      el('resolve').innerHTML=`<span>${ready?'TOMAR DECISIÓN':'RESOLVER AHORA'}</span><span>→</span>`;
+      save();show('chat',{scroll});if(follow)followConversation();
+    };
+
+    window.chooseLine=function(i){
+      tap();const p=MP(),c=current(),raw=c.nodes[p.node]||[],o=raw[i];if(!o)return;
+      const alreadyUsed=p.chat.some(m=>m.who==='you'&&m.text===o.t);
+      if(alreadyUsed){renderChat({scroll:false});return}
+      const d=discoveredSet();
+      p.chat.push({who:'you',text:o.t});p.chat.push({who:'client',text:o.r,q:o.q});
+      (o.facts||[]).forEach(f=>d.add(f));p.discovered=[...d];p.rapport=Math.max(0,Math.min(100,p.rapport+o.q));p.node=o.next;save();
+      if(p.rapport<22){lost();return}
+      renderChat({scroll:false,follow:true});
+    };
+  });
 })();
