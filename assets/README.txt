@@ -1,0 +1,1 @@
+Pitbull Academy visual assets.
