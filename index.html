@@ -4,57 +4,54 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <meta name="theme-color" content="#0b0c0d">
-  <title>Pitbull Academy · Quality Pass 03</title>
+  <title>Pitbull Academy · Core V1</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="catalog.css">
+  <link rel="stylesheet" href="core-v1.css">
 </head>
 <body>
 <section id="splash" class="splash" aria-label="Pitbull Academy">
   <div class="splash-orbit" aria-hidden="true"></div>
   <div class="splash-center">
-    <div class="splash-wordmark">
-      <strong>PITBULL</strong>
-      <span>ACADEMY</span>
-    </div>
-    <button class="splash-enter" onclick="enterAcademy()" aria-label="Entrar a Pitbull Academy">
-      <span>ENTRAR</span><span aria-hidden="true">→</span>
-    </button>
+    <div class="splash-wordmark"><strong>PITBULL</strong><span>ACADEMY</span></div>
+    <button class="splash-enter" onclick="enterAcademy()" aria-label="Entrar a Pitbull Academy"><span>ENTRAR</span><span aria-hidden="true">→</span></button>
   </div>
 </section>
 
 <main class="app">
   <div class="topline">
-    <div id="appcode" class="appcode">PITBULL ACADEMY · M01</div>
-    <div id="moduleMeter" class="module-meter" style="--p:0deg" aria-label="Progreso del módulo">
-      <span id="moduleMeterText">0/6</span>
-    </div>
+    <div id="appcode" class="appcode">PITBULL ACADEMY</div>
+    <div id="moduleMeter" class="module-meter" style="--p:0deg;visibility:hidden" aria-label="Progreso del módulo"><span id="moduleMeterText">0/6</span></div>
   </div>
 
   <section id="home" class="screen">
     <p class="eyebrow">ENTRENAMIENTO COMERCIAL</p>
     <h1>Entrená criterio de mostrador.</h1>
+    <p class="home-intro">Práctica guiada para escuchar, interpretar y recomendar con criterio dentro del universo de suplementación.</p>
+    <p class="section-label">CONTINUAR</p>
     <div class="module-card">
       <div class="module-meta"><span id="moduleMeta" class="module-badge"></span><span class="module-badge">ACTIVO</span></div>
       <h2 id="moduleTitle"></h2>
       <p id="moduleSubtitle" class="muted"></p>
-      <div id="moduleBrand" class="brand"></div>
+      <div id="moduleScope" class="brand"></div>
       <div class="progress"><i id="moduleProgress"></i></div>
       <div id="resumeText" class="resume"></div>
-      <div class="actions"><button class="primary" onclick="openModule()"><span>ENTRAR AL MÓDULO</span><span>→</span></button></div>
+      <div class="actions"><button class="primary" onclick="openModule()"><span id="moduleCta">ENTRAR AL MÓDULO</span><span>→</span></button></div>
     </div>
     <button class="catalog-entry" onclick="openCatalog()">
-      <span><small>CATÁLOGO DE ENTRENAMIENTO</small><strong><span id="productCount">8</span> productos Pitbull incorporados</strong></span>
+      <span><small>BIBLIOTECA</small><strong><span id="productCount">0</span> productos · <span id="brandCount">0</span> marcas</strong><em>Explorá productos, categorías y módulos asociados.</em></span>
       <span class="catalog-arrow">→</span>
     </button>
   </section>
 
   <section id="catalog" class="screen" hidden>
-    <p class="eyebrow">BIBLIOTECA DE PRODUCTOS</p>
-    <h2>Lo que podemos entrenar.</h2>
-    <p class="muted">La marca vive dentro del contenido. Cada producto puede convertirse en un módulo cuando su criterio comercial esté documentado.</p>
+    <p class="eyebrow">BIBLIOTECA</p>
+    <h2>Productos para entrenar.</h2>
+    <p class="muted">Academy es la plataforma de formación. Las marcas y los productos viven dentro del contenido.</p>
+    <p id="catalogSummary" class="library-summary"></p>
+    <div id="catalogFilters" class="filter-row" aria-label="Filtrar por marca"></div>
     <div id="productList" class="product-list"></div>
     <div class="actions"><button class="tertiary" onclick="show('home')"><span>VOLVER</span><span>←</span></button></div>
   </section>
@@ -63,11 +60,7 @@
     <p class="eyebrow">FICHA ACADEMY</p>
     <div class="product-detail-card">
       <div class="product-detail-media"><img id="productImage" alt=""></div>
-      <div class="product-detail-head">
-        <p id="productBrand" class="eyebrow"></p>
-        <h2 id="productName"></h2>
-        <div id="productStatus" class="product-status"></div>
-      </div>
+      <div class="product-detail-head"><p id="productBrand" class="eyebrow"></p><h2 id="productName"></h2><div id="productStatus" class="product-status"></div></div>
     </div>
     <p id="productSummary" class="product-summary"></p>
     <div class="product-facts">
@@ -76,30 +69,26 @@
       <div><span>FORMATO</span><strong id="productFormat"></strong></div>
       <div><span>SABORES</span><strong id="productFlavors"></strong></div>
     </div>
-    <p class="provisional">Base de producto incorporada desde Nutribull. La información de entrenamiento se audita antes de habilitar cada módulo.</p>
+    <div class="source-card">
+      <div><span>FUENTE DE CATÁLOGO</span><strong id="productSource"></strong></div>
+      <div><span>CONTROL INFORMATIVO</span><strong id="productAudit"></strong></div>
+    </div>
+    <p class="provisional">La presencia de un producto en la biblioteca no implica que su contenido técnico esté aprobado para entrenamiento.</p>
     <div class="actions">
-      <button id="productModuleButton" class="secondary" onclick="openProductModule()"><span>MÓDULO EN PREPARACIÓN</span><span>→</span></button>
+      <button id="productModuleButton" class="secondary" onclick="openProductModule()"><span>SIN MÓDULO ACTIVO</span><span>·</span></button>
       <button class="tertiary" onclick="openCatalog()"><span>VOLVER A PRODUCTOS</span><span>←</span></button>
     </div>
   </section>
 
   <section id="module" class="screen" hidden>
-    <p class="eyebrow">M01 · PRODUCTO</p>
-    <h2>Lo que vas a entrenar.</h2>
+    <p id="moduleEyebrow" class="eyebrow"></p>
+    <h2 id="moduleHeading"></h2>
     <div class="card product-layout">
-      <div class="packshot-frame"><img src="assets/glutamina.webp" alt="Glutamine Micronized 300 g"></div>
-      <div>
-        <p class="eyebrow">PITBULL SUPLEMENTOS</p>
-        <h3>Glutamine Micronized 300 g</h3>
-        <p class="muted">Producto de referencia para esta simulación.</p>
-      </div>
+      <div class="packshot-frame"><img id="moduleProductImage" alt=""></div>
+      <div><p id="moduleProductBrand" class="eyebrow"></p><h3 id="moduleProductName"></h3><p id="moduleProductNote" class="muted"></p></div>
     </div>
-    <div class="points">
-      <div class="point">Escuchar antes de recomendar.</div>
-      <div class="point">Separar objetivo de producto.</div>
-      <div class="point">Reconocer cuándo no ofrecer.</div>
-    </div>
-    <p class="provisional">Contenido en revisión · M01. Auditoría documental pendiente antes de publicación definitiva.</p>
+    <div id="moduleTrainingPoints" class="points"></div>
+    <p id="moduleStatusNote" class="provisional"></p>
     <div class="actions">
       <button class="primary" onclick="startModule()"><span>EMPEZAR SIMULADOR</span><span>→</span></button>
       <button class="tertiary" onclick="show('home')"><span>VOLVER</span><span>←</span></button>
@@ -107,7 +96,7 @@
   </section>
 
   <section id="map" class="screen" hidden>
-    <p class="eyebrow">SIMULADOR · 6 CASOS</p>
+    <p id="mapMeta" class="eyebrow">SIMULADOR</p>
     <h2>Tu próximo cliente.</h2>
     <p class="muted">Los casos se desbloquean en orden.</p>
     <div id="clientList" class="cast"></div>
@@ -116,104 +105,55 @@
 
   <section id="case" class="screen" hidden>
     <p id="caseNum" class="eyebrow"></p>
-    <div class="case-person">
-      <img id="caseAvatar" class="client-photo case-photo" alt="">
-      <div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div>
-    </div>
+    <div class="case-person"><img id="caseAvatar" class="client-photo case-photo" alt=""><div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div></div>
     <p id="caseQuote" class="case-quote"></p>
-    <div class="actions">
-      <button class="primary" onclick="beginChat()"><span>ATENDER</span><span>→</span></button>
-      <button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER</span><span>←</span></button>
-    </div>
+    <div class="actions"><button class="primary" onclick="beginChat()"><span>ATENDER</span><span>→</span></button><button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER</span><span>←</span></button></div>
   </section>
 
   <section id="chat" class="screen" hidden>
-    <div class="chat-head">
-      <img id="chatAvatar" class="client-photo chat-photo" alt="">
-      <div><strong id="chatName"></strong><span id="chatLabel"></span></div>
-    </div>
-    <div id="thread" class="thread"></div>
-    <div id="choices" class="choice-list"></div>
-    <button id="resolve" class="secondary resolve" onclick="openDecision()"></button>
+    <div class="chat-head"><img id="chatAvatar" class="client-photo chat-photo" alt=""><div><strong id="chatName"></strong><span id="chatLabel"></span></div></div>
+    <div id="thread" class="thread"></div><div id="choices" class="choice-list"></div><button id="resolve" class="secondary resolve" onclick="openDecision()"></button>
   </section>
 
   <section id="decision" class="screen" hidden>
-    <p class="eyebrow">DECISIÓN</p>
-    <h2>¿Qué harías ahora?</h2>
-    <p class="muted">Elegí la acción que tomarías en el mostrador con lo que descubriste.</p>
-    <div class="decision-list">
-      <button class="decision" onclick="decide('ask')"><b>PREGUNTAR MÁS</b><span>Necesito contexto.</span></button>
-      <button class="decision" onclick="decide('glutamine')"><b>GLUTAMINA</b><span>Tiene sentido.</span></button>
-      <button class="decision" onclick="decide('other')"><b>OTRA CATEGORÍA</b><span>La necesidad apunta a otro lado.</span></button>
-      <button class="decision" onclick="decide('none')"><b>TODAVÍA NO</b><span>Primero resolver otra base.</span></button>
-    </div>
+    <p class="eyebrow">DECISIÓN</p><h2>¿Qué harías ahora?</h2><p class="muted">Elegí la acción que tomarías en el mostrador con lo que descubriste.</p>
+    <div id="decisionList" class="decision-list"></div>
     <div class="actions"><button class="tertiary" onclick="renderChat()"><span>VOLVER A LA CONVERSACIÓN</span><span>←</span></button></div>
   </section>
 
   <section id="reaction" class="screen" hidden>
-    <p class="eyebrow">CONSECUENCIA</p>
-    <div class="reaction-person">
-      <img id="reactAvatar" class="client-photo reaction-photo" alt="">
-      <div><strong id="reactName"></strong><span class="small">Cliente</span></div>
-    </div>
+    <p class="eyebrow">CONSECUENCIA</p><div class="reaction-person"><img id="reactAvatar" class="client-photo reaction-photo" alt=""><div><strong id="reactName"></strong><span class="small">Cliente</span></div></div>
     <p id="clientLine" class="client-line"></p>
-    <div id="learning" class="learning">
-      <p class="eyebrow">APRENDIZAJE</p>
-      <div id="resultTitle" class="result"></div>
-      <p id="resultNote" class="muted"></p>
-      <p id="learnText" class="small"></p>
-    </div>
+    <div id="learning" class="learning"><p class="eyebrow">APRENDIZAJE</p><div id="resultTitle" class="result"></div><p id="resultNote" class="muted"></p><p id="learnText" class="small"></p></div>
     <div class="actions"><button id="reactionNext" class="primary" onclick="commit()"><span>CONTINUAR</span><span>→</span></button></div>
   </section>
 
   <section id="bossCheck" class="screen" hidden><div id="bossCheckBody"></div></section>
 
   <section id="final" class="screen" hidden>
-    <p class="eyebrow">RESULTADO</p>
-    <h1><span id="overall"></span></h1>
-    <p class="muted">Puntaje general del turno.</p>
-    <div class="metric-grid">
-      <div class="metric"><span>ESCUCHA</span><strong id="sListen"></strong></div>
-      <div class="metric"><span>CRITERIO</span><strong id="sCriterion"></strong></div>
-      <div class="metric"><span>CONVERSACIÓN</span><strong id="sConversation"></strong></div>
-      <div class="metric"><span>RECOMENDACIÓN</span><strong id="sRecommendation"></strong></div>
-    </div>
+    <p class="eyebrow">RESULTADO</p><h1><span id="overall"></span></h1><p class="muted">Puntaje general del turno.</p>
+    <div class="metric-grid"><div class="metric"><span>ESCUCHA</span><strong id="sListen"></strong></div><div class="metric"><span>CRITERIO</span><strong id="sCriterion"></strong></div><div class="metric"><span>CONVERSACIÓN</span><strong id="sConversation"></strong></div><div class="metric"><span>RECOMENDACIÓN</span><strong id="sRecommendation"></strong></div></div>
     <div class="card"><p class="eyebrow">RANGO</p><h2 id="rank"></h2></div>
     <div class="boss-hero" style="margin-top:18px"><img id="reviewImage" alt="Tiby The Boss"><div class="boss-copy"><p class="eyebrow">THE BOSS REVIEW</p><p id="verdict" class="lead"></p><div class="signature">TIBY · THE BOSS</div></div></div>
-    <div class="actions">
-      <button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button>
-      <button class="primary" onclick="reset()"><span>VOLVER A EMPEZAR</span><span>↻</span></button>
-    </div>
+    <div class="actions"><button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button><button class="primary" onclick="reset()"><span>VOLVER A EMPEZAR</span><span>↻</span></button></div>
   </section>
 
-  <section id="review" class="screen" hidden>
-    <p class="eyebrow">REVISIÓN</p><h2>Tu turno, caso por caso.</h2><div id="reviewList"></div>
-    <div class="actions"><button class="secondary" onclick="show('final')"><span>VOLVER AL RESULTADO</span><span>←</span></button></div>
-  </section>
+  <section id="review" class="screen" hidden><p class="eyebrow">REVISIÓN</p><h2>Tu turno, caso por caso.</h2><div id="reviewList"></div><div class="actions"><button class="secondary" onclick="show('final')"><span>VOLVER AL RESULTADO</span><span>←</span></button></div></section>
 </main>
+
+<script src="data/brands.js"></script>
+<script src="data/sources.js"></script>
 <script src="data/products.js"></script>
-<script src="data/module.js"></script>
+<script src="data/modules.js"></script>
 <script src="data/clients.js"></script>
+<script src="data/scenarios/m01.js"></script>
 <script src="app.js"></script>
 <script>
 (() => {
   let hiddenAt = 0;
-  const presentSplash = () => {
-    const splash = document.getElementById('splash');
-    if (!splash) return;
-    splash.hidden = false;
-    splash.classList.remove('splash-out');
-  };
-  presentSplash();
-  window.addEventListener('pageshow', presentSplash);
-  window.addEventListener('load', presentSplash);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      hiddenAt = Date.now();
-      return;
-    }
-    if (hiddenAt && Date.now() - hiddenAt > 3000) presentSplash();
-  });
+  const presentSplash = () => {const splash=document.getElementById('splash');if(!splash)return;splash.hidden=false;splash.classList.remove('splash-out')};
+  presentSplash();window.addEventListener('pageshow',presentSplash);window.addEventListener('load',presentSplash);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){hiddenAt=Date.now();return}if(hiddenAt&&Date.now()-hiddenAt>3000)presentSplash()});
 })();
 </script>
 </body>
