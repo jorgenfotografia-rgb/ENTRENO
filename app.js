@@ -41,6 +41,7 @@ function migrate(raw={}){
     const legacy=legacyProgress(raw);
     next.moduleProgress[DEFAULT_MODULE_ID]=legacy&&progressWeight(legacy)>progressWeight(currentProgress)?legacy:currentProgress;
   }
+  LEGACY_PROGRESS_KEYS.forEach(k=>{delete next[k]});
   Object.keys(next.moduleProgress).forEach(id=>{next.moduleProgress[id]=normalizeProgress(next.moduleProgress[id])});
   if(!next.selectedModule)next.selectedModule=DEFAULT_MODULE_ID;
   if(typeof next.pilotAlias!=='string')next.pilotAlias='';
@@ -121,7 +122,10 @@ function resumeModuleFromHome(){
   tap();
   const p=MP(),total=C().length;
   if(total&&p.completed.length>=total&&p.results.length){final();return}
-  if(p.completed.length>0||p.chat.length||p.pending||p.lostPending){renderMap();show('map');return}
+  if(p.pending){renderReaction();return}
+  if(p.lostPending){renderLostReaction();return}
+  if(p.chat.length&&!p.completed.includes(p.current)){renderChat();return}
+  if(p.completed.length>0){renderMap();show('map');return}
   openModule();
 }
 function startModule(){tap();const p=MP();if(!p.startedAt)p.startedAt=Date.now();save();renderMap();show('map')}
