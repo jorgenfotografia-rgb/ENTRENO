@@ -52,9 +52,11 @@
     }
   };
 
-  // PRE-PILOT V1.1.4 · conversación, mapa y decisiones siempre accionables.
-  // Las decisiones prematuras generan consecuencia; PREGUNTAR MÁS vuelve a la conversación.
+  // PRE-PILOT V1.1.5 · conversación, mapa y decisiones siempre accionables.
+  // Ninguna decisión puede completar el caso sin mostrar primero su consecuencia.
   window.addEventListener('DOMContentLoaded',()=>{
+    const baseCommit=window.commit;
+
     const sanitizeChat=chat=>{
       const source=Array.isArray(chat)?chat:[],out=[],seenUserLines=new Set();
       for(let i=0;i<source.length;i++){
@@ -125,6 +127,33 @@
       renderChat({scroll:false,follow:true});
     };
 
+    const commitAfterConsequence=()=>{
+      const p=MP(),o=p.pending;
+      if(!o)return;
+      if(o.unlockAt&&Date.now()<o.unlockAt)return;
+      baseCommit();
+    };
+    window.commitAcademyDecision=commitAfterConsequence;
+
+    window.renderReaction=function({scroll=true}={}){
+      const p=MP(),c=current(),o=p.pending;
+      if(!o){renderMap();show('map',{scroll});return}
+      setPhoto('reactAvatar',c);
+      el('reactName').textContent=c.name;
+      el('clientLine').textContent=`“${o.copy}”`;
+      el('learning').className=`learning ${o.strength}`;
+      el('resultTitle').textContent=o.title;
+      el('resultNote').textContent=o.note;
+      el('learnText').textContent=c.explain;
+      const next=el('reactionNext');
+      next.onclick=commitAfterConsequence;
+      next.disabled=true;
+      next.innerHTML='<span>CONTINUAR</span><span>→</span>';
+      show('reaction',{scroll});
+      const wait=Math.max(0,(o.unlockAt||Date.now())-Date.now());
+      window.setTimeout(()=>{if(MP().pending===o)next.disabled=false},wait);
+    };
+
     const runDecision=action=>{
       if(action==='ASK_MORE'){
         tap();renderChat({scroll:true});return;
@@ -157,7 +186,7 @@
         strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad;
       }
 
-      p.pending={action,sc,correct,strength,title,note,copy};
+      p.pending={action,sc,correct,strength,title,note,copy,unlockAt:Date.now()+700};
       p.lostPending=null;
       save();
       renderReaction();
@@ -168,7 +197,7 @@
     window.renderDecision=function(){
       const m=activeModule();
       const actions=m?.decisionActions||[];
-      el('decisionList').innerHTML=actions.map(a=>`<button class="decision" onclick="academyDecision('${a.id}')"><b>${actionLabel(a)}</b><span>${a.hint}</span></button>`).join('');
+      el('decisionList').innerHTML=actions.map(a=>`<button type="button" class="decision" onclick="event.preventDefault();event.stopPropagation();academyDecision('${a.id}');return false"><b>${actionLabel(a)}</b><span>${a.hint}</span></button>`).join('');
     };
   });
 })();
