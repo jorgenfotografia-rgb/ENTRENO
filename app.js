@@ -9,7 +9,20 @@ function save(){localStorage.setItem(KEY,JSON.stringify({...S,discovered:[...(S.
 function reset(){localStorage.removeItem(KEY);S=fresh();render()}
 function tap(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
 function el(id){return document.getElementById(id)}
-function show(id,{scroll=true}={}){document.querySelectorAll('.screen').forEach(x=>x.hidden=true);el(id).hidden=false;S.view=id;save();if(scroll)window.scrollTo({top:0,behavior:'smooth'})}
+function enterAcademy(){
+  tap();
+  const splash=el('splash');
+  if(!splash)return;
+  splash.classList.add('splash-out');
+  window.setTimeout(()=>{splash.hidden=true;splash.classList.remove('splash-out')},220);
+}
+function show(id,{scroll=true}={}){
+  document.querySelectorAll('.screen').forEach(x=>x.hidden=true);
+  el(id).hidden=false;
+  S.view=id;
+  save();
+  if(scroll)window.scrollTo({top:0,behavior:'smooth'});
+}
 function current(){return C[S.current]}
 function discoveredSet(){return new Set(S.discovered||[])}
 function setPhoto(id,c){const node=el(id);if(!node)return;node.src=A(`${c.id}.svg`);node.alt=c.name}
@@ -52,17 +65,37 @@ function renderMap(){
 }
 function startClient(i){tap();S.current=i;S.chat=[];S.node='start';S.discovered=[];S.rapport=62;S.pending=null;S.lostPending=null;save();renderCase(true)}
 function renderCase(scroll=true){
-  const c=current();setPhoto('caseAvatar',c);el('caseNum').textContent=`CLIENTE ${String(S.current+1).padStart(2,'0')} · ${S.current+1}/6`;el('caseName').textContent=c.name;el('caseAge').textContent=c.age;el('caseLabel').textContent=c.label;el('caseQuote').textContent=`“${c.intro}”`;show('case',{scroll});
+  const c=current(),total=M.clients||6,n=S.current+1;
+  setPhoto('caseAvatar',c);
+  el('caseNum').textContent=`CASO ${String(n).padStart(2,'0')} DE ${String(total).padStart(2,'0')}`;
+  el('caseName').textContent=c.name;el('caseAge').textContent=c.age;el('caseLabel').textContent=c.label;el('caseQuote').textContent=`“${c.intro}”`;
+  show('case',{scroll});
 }
 function beginChat(){tap();const c=current();if(!S.chat.length)S.chat=[{who:'client',text:c.intro}];save();renderChat()}
 function rtxt(q){if(q>=8)return['La conversación gana confianza.','good'];if(q<=-15)return['La conversación se enfría.','bad'];if(q<0)return['La pregunta llega algo pronto.','bad'];return['La conversación continúa.','']}
-function renderChat({scroll=true}={}){
+function followConversation(){
+  requestAnimationFrame(()=>{
+    const bubbles=[...el('thread').querySelectorAll('.bubble')],last=bubbles[bubbles.length-1];
+    if(last)last.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+}
+function renderChat({scroll=true,follow=false}={}){
   const c=current();setPhoto('chatAvatar',c);el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;
   el('thread').innerHTML=S.chat.map(m=>{const rx=m.q!==undefined?rtxt(m.q):null;return `<div class="bubble ${m.who==='client'?'client':'you'}">${m.text}</div>${rx?`<div class="reaction ${rx[1]}">${rx[0]}</div>`:''}`}).join('');
-  const opts=c.nodes[S.node]||[];el('choices').innerHTML=opts.map((o,i)=>`<button class="choice" onclick="chooseLine(${i})">${o.t}</button>`).join('');
-  const turns=S.chat.filter(x=>x.who==='you').length;el('resolve').className='secondary resolve'+(turns<2?' is-early':'');el('resolve').innerHTML=`<span>RESOLVER CASO</span><span>${turns<2?'cuando estés listo':'→'}</span>`;save();show('chat',{scroll})
+  const opts=c.nodes[S.node]||[];
+  el('choices').innerHTML=opts.map((o,i)=>`<button class="choice" onclick="chooseLine(${i})">${o.t}</button>`).join('');
+  const turns=S.chat.filter(x=>x.who==='you').length,ready=turns>=2;
+  el('resolve').className=(ready?'primary':'secondary')+' resolve';
+  el('resolve').innerHTML=`<span>${ready?'TOMAR DECISIÓN':'RESOLVER AHORA'}</span><span>→</span>`;
+  save();show('chat',{scroll});
+  if(follow)followConversation();
 }
-function chooseLine(i){tap();const c=current(),o=c.nodes[S.node][i],d=discoveredSet();S.chat.push({who:'you',text:o.t});S.chat.push({who:'client',text:o.r,q:o.q});o.facts.forEach(f=>d.add(f));S.discovered=[...d];S.rapport=Math.max(0,Math.min(100,S.rapport+o.q));S.node=o.next;save();if(S.rapport<22){lost();return}renderChat()}
+function chooseLine(i){
+  tap();const c=current(),o=c.nodes[S.node][i],d=discoveredSet();
+  S.chat.push({who:'you',text:o.t});S.chat.push({who:'client',text:o.r,q:o.q});o.facts.forEach(f=>d.add(f));S.discovered=[...d];S.rapport=Math.max(0,Math.min(100,S.rapport+o.q));S.node=o.next;save();
+  if(S.rapport<22){lost();return}
+  renderChat({scroll:false,follow:true});
+}
 function openDecision(){tap();show('decision')}
 function calc(action){const c=current(),d=discoveredSet(),listen=Math.min(100,Math.round([...d].filter(x=>c.facts.includes(x)).length/c.facts.length*100));return{listen,criterion:action===c.answer?100:(action==='ask'&&listen<67?78:35),conversation:S.rapport,recommendation:action===c.answer?100:(action==='ask'&&listen<67?75:30)}}
 function decide(action){tap();const c=current(),sc=calc(action),correct=action===c.answer,enough=sc.listen>=67;let strength,title,note,copy;if(correct&&enough&&sc.conversation>=55){strength='good';title='Buena lectura';note='La decisión coincide con el contexto que construiste.';copy=c.reaction.good}else if(correct&&!enough){strength='mid';title='Correcto, demasiado pronto';note='Llegaste a una buena acción con poco contexto.';copy=c.reaction.early}else if(action==='ask'&&!enough){strength='mid';title='Buena pausa';note='Reconociste que todavía faltaba información.';copy=c.reaction.early}else{strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad}S.pending={action,sc,correct,strength,title,note,copy};S.lostPending=null;save();renderReaction()}
