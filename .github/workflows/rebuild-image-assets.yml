@@ -1,0 +1,40 @@
+name: Rebuild image assets
+
+on:
+  push:
+    paths:
+      - 'asset-source/**'
+      - '.github/workflows/rebuild-image-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rebuild WebP assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat asset-source/glutamina.*.b64 | tr -d '\n\r ' | base64 -d > assets/glutamina.webp
+          cat asset-source/tiby-boss-check.*.b64 | tr -d '\n\r ' | base64 -d > assets/tiby-boss-check.webp
+          cat asset-source/tiby-boss-review.*.b64 | tr -d '\n\r ' | base64 -d > assets/tiby-boss-review.webp
+          file assets/glutamina.webp assets/tiby-boss-check.webp assets/tiby-boss-review.webp
+
+      - name: Commit rebuilt assets
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/glutamina.webp assets/tiby-boss-check.webp assets/tiby-boss-review.webp
+          if git diff --cached --quiet; then
+            echo "No asset changes to commit."
+            exit 0
+          fi
+          git commit -m "assets: rebuild product and Tiby images"
+          git push
