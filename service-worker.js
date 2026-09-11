@@ -1,5 +1,5 @@
-const CACHE='pitbull-academy-assets-v1';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./data/module.js','./data/clients.js','./manifest.webmanifest',
+const CACHE='pitbull-academy-products-v2';
+const ASSETS=['./','./index.html','./styles.css','./catalog.css','./app.js','./data/products.js','./data/module.js','./data/clients.js','./manifest.webmanifest',
 './assets/glutamina.webp','./assets/tiby-boss-check.webp','./assets/tiby-boss-review.webp','./assets/icon-192.png','./assets/icon-512.png','./assets/icon-512-maskable.png',
 './assets/tomas.svg','./assets/luciano.svg','./assets/marina.svg','./assets/matias.svg','./assets/carla.svg','./assets/federico.svg'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)))});
