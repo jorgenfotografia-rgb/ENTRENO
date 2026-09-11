@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <meta name="theme-color" content="#0b0c0d">
-  <title>Pitbull Academy · Core V1</title>
+  <title>Pitbull Academy · Core V1.1 PRE-PILOT</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -38,7 +38,7 @@
       <div id="moduleScope" class="brand"></div>
       <div class="progress"><i id="moduleProgress"></i></div>
       <div id="resumeText" class="resume"></div>
-      <div class="actions"><button class="primary" onclick="openModule()"><span id="moduleCta">ENTRAR AL MÓDULO</span><span>→</span></button></div>
+      <div class="actions"><button class="primary" onclick="resumeModuleFromHome()"><span id="moduleCta">ENTRAR AL MÓDULO</span><span>→</span></button></div>
     </div>
     <button class="catalog-entry" onclick="openCatalog()">
       <span><small>BIBLIOTECA</small><strong><span id="productCount">0</span> productos · <span id="brandCount">0</span> marcas</strong><em>Explorá productos, categorías y módulos asociados.</em></span>
@@ -88,6 +88,7 @@
       <div><p id="moduleProductBrand" class="eyebrow"></p><h3 id="moduleProductName"></h3><p id="moduleProductNote" class="muted"></p></div>
     </div>
     <div id="moduleTrainingPoints" class="points"></div>
+    <p class="module-instruction">Atendé cada caso como si el cliente estuviera frente a vos. Preguntá, decidí y observá qué ocurre.</p>
     <p id="moduleStatusNote" class="provisional"></p>
     <div class="actions">
       <button class="primary" onclick="startModule()"><span>EMPEZAR SIMULADOR</span><span>→</span></button>
@@ -98,7 +99,7 @@
   <section id="map" class="screen" hidden>
     <p id="mapMeta" class="eyebrow">SIMULADOR</p>
     <h2>Tu próximo cliente.</h2>
-    <p class="muted">Los casos se desbloquean en orden.</p>
+    <p class="muted">Los casos se desbloquean en orden. Los completados quedan disponibles para revisión.</p>
     <div id="clientList" class="cast"></div>
     <div class="actions"><button class="tertiary" onclick="show('home')"><span>SALIR DEL MÓDULO</span><span>←</span></button></div>
   </section>
@@ -108,6 +109,18 @@
     <div class="case-person"><img id="caseAvatar" class="client-photo case-photo" alt=""><div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div></div>
     <p id="caseQuote" class="case-quote"></p>
     <div class="actions"><button class="primary" onclick="beginChat()"><span>ATENDER</span><span>→</span></button><button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER</span><span>←</span></button></div>
+  </section>
+
+  <section id="caseReview" class="screen" hidden>
+    <p id="caseReviewNum" class="eyebrow"></p>
+    <div class="case-person"><img id="caseReviewAvatar" class="client-photo case-photo" alt=""><div><strong id="caseReviewName" class="case-review-name"></strong><span id="caseReviewLabel" class="small"></span></div></div>
+    <p id="caseReviewQuote" class="case-quote case-review-quote"></p>
+    <div class="case-review-grid">
+      <div><span>DECISIÓN</span><strong id="caseReviewDecision"></strong></div>
+      <div><span>RESULTADO</span><strong id="caseReviewScore"></strong></div>
+    </div>
+    <div class="learning good case-review-learning"><p class="eyebrow">APRENDIZAJE</p><p id="caseReviewLearning" class="muted"></p></div>
+    <div class="actions"><button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER AL MAPA</span><span>←</span></button></div>
   </section>
 
   <section id="chat" class="screen" hidden>
@@ -135,7 +148,14 @@
     <div class="metric-grid"><div class="metric"><span>ESCUCHA</span><strong id="sListen"></strong></div><div class="metric"><span>CRITERIO</span><strong id="sCriterion"></strong></div><div class="metric"><span>CONVERSACIÓN</span><strong id="sConversation"></strong></div><div class="metric"><span>RECOMENDACIÓN</span><strong id="sRecommendation"></strong></div></div>
     <div class="card"><p class="eyebrow">RANGO</p><h2 id="rank"></h2></div>
     <div class="boss-hero" style="margin-top:18px"><img id="reviewImage" alt="Tiby The Boss"><div class="boss-copy"><p class="eyebrow">THE BOSS REVIEW</p><p id="verdict" class="lead"></p><div class="signature">TIBY · THE BOSS</div></div></div>
-    <div class="actions"><button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button><button class="primary" onclick="reset()"><span>VOLVER A EMPEZAR</span><span>↻</span></button></div>
+    <div class="pilot-card">
+      <p class="eyebrow">PILOTO · M01 · CORE V1.1</p>
+      <label for="pilotAlias">Nombre o alias</label>
+      <input id="pilotAlias" type="text" maxlength="40" autocomplete="name" placeholder="Ej. Vendedor 01">
+      <p class="small">Usalo únicamente para identificar el resultado de esta prueba.</p>
+      <button id="shareResult" class="secondary" onclick="sharePilotResult()"><span>COMPARTIR RESULTADO</span><span>↗</span></button>
+    </div>
+    <div class="actions"><button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button><button class="tertiary" onclick="resetModule()"><span>REINICIAR MÓDULO</span><span>↻</span></button></div>
   </section>
 
   <section id="review" class="screen" hidden><p class="eyebrow">REVISIÓN</p><h2>Tu turno, caso por caso.</h2><div id="reviewList"></div><div class="actions"><button class="secondary" onclick="show('final')"><span>VOLVER AL RESULTADO</span><span>←</span></button></div></section>
