@@ -52,7 +52,7 @@
     }
   };
 
-  // PRE-PILOT V1.1.2 · microajustes de conversación y mapa.
+  // PRE-PILOT V1.1.3 · conversación, mapa y decisiones sin contexto.
   // Se aplican al cargar para mantener la lógica general de Academy intacta.
   window.addEventListener('DOMContentLoaded',()=>{
     const sanitizeChat=chat=>{
@@ -123,6 +123,31 @@
       (o.facts||[]).forEach(f=>d.add(f));p.discovered=[...d];p.rapport=Math.max(0,Math.min(100,p.rapport+o.q));p.node=o.next;save();
       if(p.rapport<22){lost();return}
       renderChat({scroll:false,follow:true});
+    };
+
+    const baseDecide=window.decide;
+    window.decide=function(action){
+      if(action==='ASK_MORE'){
+        tap();renderChat({scroll:true});return;
+      }
+      const p=MP(),c=current();
+      const turns=(p.chat||[]).filter(x=>x.who==='you').length;
+      if(turns===0){
+        tap();
+        const correct=action===c.answer;
+        const sc=calc(action);
+        sc.listen=0;
+        sc.criterion=correct?55:20;
+        sc.recommendation=correct?45:15;
+        const strength=correct?'mid':'bad';
+        const title=correct?'Dirección posible, sin contexto':'Decidiste demasiado pronto';
+        const note=correct
+          ?'La acción podría alinearse con el objetivo, pero llegaste a ella sin hacer una sola pregunta.'
+          :'Elegiste una acción antes de entender qué estaba intentando resolver el cliente.';
+        const copy=correct?c.reaction.early:c.reaction.bad;
+        p.pending={action,sc,correct,strength,title,note,copy};p.lostPending=null;save();renderReaction();return;
+      }
+      return baseDecide(action);
     };
   });
 })();
