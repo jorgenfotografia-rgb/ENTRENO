@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
   <meta name="theme-color" content="#0b0c0d">
-  <title>Pitbull Academy · Quality Pass 02</title>
+  <title>Pitbull Academy · Quality Pass 03</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -97,7 +97,7 @@
     </div>
     <div id="thread" class="thread"></div>
     <div id="choices" class="choice-list"></div>
-    <button id="resolve" class="secondary resolve is-early" onclick="openDecision()"></button>
+    <button id="resolve" class="secondary resolve" onclick="openDecision()"></button>
   </section>
 
   <section id="decision" class="screen" hidden>
@@ -158,13 +158,25 @@
 <script src="data/clients.js"></script>
 <script src="app.js"></script>
 <script>
-function enterAcademy(){
-  const splash=document.getElementById('splash');
-  if(!splash)return;
-  try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}
-  splash.classList.add('splash-out');
-  setTimeout(()=>{splash.hidden=true},260);
-}
+(() => {
+  let hiddenAt = 0;
+  const presentSplash = () => {
+    const splash = document.getElementById('splash');
+    if (!splash) return;
+    splash.hidden = false;
+    splash.classList.remove('splash-out');
+  };
+  presentSplash();
+  window.addEventListener('pageshow', presentSplash);
+  window.addEventListener('load', presentSplash);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      hiddenAt = Date.now();
+      return;
+    }
+    if (hiddenAt && Date.now() - hiddenAt > 3000) presentSplash();
+  });
+})();
 </script>
 </body>
 </html>
