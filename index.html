@@ -1,150 +1,69 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111315">
-  <meta name="description" content="ENTRENO: elegí tu objetivo semanal, cumplilo y convertí tu constancia en progreso.">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icons/icon-192.png">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
-  <title>ENTRENO</title>
-</head>
-<body>
-  <main id="onboarding" class="onboarding-shell" hidden>
-    <header class="onboarding-header">
-      <p class="eyebrow">ENTRENO · V0.3</p>
-      <div class="status-dot" aria-label="Aplicación activa"></div>
-    </header>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#0b0c0d"><title>Pitbull Academy · Quality Pass 01</title><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css"></head><body>
+<main class="app">
+<div class="topline"><div id="appcode" class="appcode">PITBULL ACADEMY · M01</div><span class="status-dot"></span></div>
 
-    <section class="commitment-card" aria-labelledby="onboardingTitle">
-      <p class="card-label">Tu compromiso</p>
-      <h1 id="onboardingTitle">¿Cuántas veces querés entrenar por semana?</h1>
-      <p id="onboardingLead" class="onboarding-copy">Elegí un objetivo que puedas sostener. Descansar también forma parte del entrenamiento.</p>
+<section id="home" class="screen">
+<p class="eyebrow">ENTRENAMIENTO COMERCIAL</p><h1>Entrená criterio de mostrador.</h1>
+<div class="module-card">
+<div class="module-meta"><span id="moduleMeta" class="module-badge"></span><span class="module-badge">ACTIVO</span></div>
+<h2 id="moduleTitle"></h2><p id="moduleSubtitle" class="muted"></p><div id="moduleBrand" class="brand"></div>
+<div class="progress"><i id="moduleProgress"></i></div><div id="resumeText" class="resume"></div>
+<div class="actions"><button class="primary" onclick="openModule()"><span>ENTRAR AL MÓDULO</span><span>→</span></button></div>
+</div></section>
 
-      <form id="goalForm" class="goal-form">
-        <fieldset>
-          <legend>Objetivo semanal</legend>
-          <div class="goal-choice-grid">
-            <label>
-              <input type="radio" name="weeklyGoal" value="2">
-              <span class="goal-choice"><strong>2</strong><small>veces</small></span>
-            </label>
-            <label>
-              <input type="radio" name="weeklyGoal" value="3">
-              <span class="goal-choice"><strong>3</strong><small>veces</small></span>
-            </label>
-            <label>
-              <input type="radio" name="weeklyGoal" value="4">
-              <span class="goal-choice"><strong>4</strong><small>veces</small></span>
-            </label>
-            <label>
-              <input type="radio" name="weeklyGoal" value="5">
-              <span class="goal-choice"><strong>5</strong><small>veces</small></span>
-            </label>
-            <label>
-              <input type="radio" name="weeklyGoal" value="6">
-              <span class="goal-choice"><strong>6</strong><small>veces</small></span>
-            </label>
-          </div>
-        </fieldset>
+<section id="module" class="screen" hidden>
+<p class="eyebrow">M01 · PRODUCTO</p><h2>Lo que vas a entrenar.</h2>
+<div class="card product-layout"><img src="assets/glutamina.webp" alt=""><div><p class="eyebrow">PITBULL SUPLEMENTOS</p><h3>Glutamine Micronized 300 g</h3><p class="muted">Producto del módulo actual. Academy mantiene su interfaz; la marca vive dentro del contenido.</p></div></div>
+<div class="points"><div class="point">Escuchar antes de recomendar.</div><div class="point">Separar objetivo de producto.</div><div class="point">Reconocer cuándo no ofrecer.</div></div>
+<p class="provisional">Contenido provisional. Auditoría documental pendiente antes de publicar el módulo definitivo.</p>
+<div class="actions"><button class="primary" onclick="startModule()"><span>EMPEZAR SIMULADOR</span><span>→</span></button><button class="tertiary" onclick="show('home')"><span>VOLVER</span><span>←</span></button></div>
+</section>
 
-        <div class="commitment-summary">
-          <span aria-hidden="true">✓</span>
-          <p>Tu racha crecerá cada semana que cumplas el objetivo que elegiste.</p>
-        </div>
+<section id="map" class="screen" hidden>
+<p class="eyebrow">SIMULADOR · 6 CASOS</p><h2>Tu próximo cliente.</h2><p class="muted">Los casos se desbloquean en orden.</p><div id="clientList" class="cast"></div>
+<div class="actions"><button class="tertiary" onclick="show('home')"><span>SALIR DEL MÓDULO</span><span>←</span></button></div>
+</section>
 
-        <button id="goalSubmit" class="primary-button onboarding-button" type="submit" disabled>
-          <span>COMENZAR</span>
-          <span aria-hidden="true">→</span>
-        </button>
-      </form>
+<section id="case" class="screen" hidden>
+<p id="caseNum" class="eyebrow"></p><div class="case-person"><img id="caseAvatar" alt=""><div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div></div>
+<p id="caseQuote" class="case-quote"></p><div class="actions"><button class="primary" onclick="beginChat()"><span>ATENDER</span><span>→</span></button><button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER</span><span>←</span></button></div>
+</section>
 
-      <p class="onboarding-note">Si ya usabas ENTRENO, tus entrenamientos y puntos anteriores se conservan.</p>
-    </section>
-  </main>
+<section id="chat" class="screen" hidden>
+<div class="chat-head"><img id="chatAvatar" alt=""><div><strong id="chatName"></strong><span id="chatLabel"></span></div></div>
+<div id="thread" class="thread"></div><div id="choices" class="choice-list"></div>
+<button id="resolve" class="secondary resolve is-early" onclick="openDecision()"></button>
+</section>
 
-  <main id="appShell" class="app-shell" hidden>
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">ENTRENO · V0.3</p>
-        <h1>Tu constancia<br>genera progreso.</h1>
-      </div>
-      <div class="status-dot" aria-label="Aplicación activa"></div>
-    </header>
+<section id="decision" class="screen" hidden>
+<p class="eyebrow">DECISIÓN</p><h2>¿Qué harías ahora?</h2><p class="muted">Elegí la acción que tomarías en el mostrador con lo que descubriste.</p>
+<div class="decision-list">
+<button class="decision" onclick="decide('ask')"><b>PREGUNTAR MÁS</b><span>Necesito contexto.</span></button>
+<button class="decision" onclick="decide('glutamine')"><b>GLUTAMINA</b><span>Tiene sentido.</span></button>
+<button class="decision" onclick="decide('other')"><b>OTRA CATEGORÍA</b><span>La necesidad apunta a otro lado.</span></button>
+<button class="decision" onclick="decide('none')"><b>TODAVÍA NO</b><span>Primero resolver otra base.</span></button>
+</div><div class="actions"><button class="tertiary" onclick="renderChat()"><span>VOLVER A LA CONVERSACIÓN</span><span>←</span></button></div>
+</section>
 
-    <section class="hero-card" aria-labelledby="streakTitle">
-      <p id="streakTitle" class="card-label">Racha de constancia</p>
-      <div class="streak-line">
-        <span class="flame" aria-hidden="true">🔥</span>
-        <strong id="streakCount">0</strong>
-        <span id="streakUnit">semanas</span>
-      </div>
-      <p id="streakMessage" class="muted">Tu racha empieza cuando completes tu primer objetivo semanal.</p>
-    </section>
+<section id="reaction" class="screen" hidden>
+<p class="eyebrow">CONSECUENCIA</p><div class="reaction-person"><img id="reactAvatar" alt=""><div><strong id="reactName"></strong><span class="small">Cliente</span></div></div>
+<p id="clientLine" class="client-line"></p>
+<div id="learning" class="learning"><p class="eyebrow">APRENDIZAJE</p><div id="resultTitle" class="result"></div><p id="resultNote" class="muted"></p><p id="learnText" class="small"></p></div>
+<div class="actions"><button id="reactionNext" class="primary" onclick="commit()"><span>CONTINUAR</span><span>→</span></button></div>
+</section>
 
-    <section class="goal-card" aria-labelledby="goalTitle">
-      <div class="goal-topline">
-        <div>
-          <p class="card-label">Tu objetivo semanal</p>
-          <h2 id="goalTitle">—</h2>
-          <span class="chosen-label">Elegido por vos</span>
-        </div>
-        <div class="points-pill" aria-label="Puntos acumulados">
-          <span aria-hidden="true">★</span>
-          <strong id="pointsBalance">0</strong>
-          <span>pts</span>
-        </div>
-      </div>
+<section id="bossCheck" class="screen" hidden>
+<div id="bossCheckBody"><div class="boss-hero"><img id="bossCheckImage" alt=""><div class="boss-copy"><p class="eyebrow">THE BOSS CHECK</p><h2>Lectura rápida.</h2><p class="lead">“Duermo cuatro horas, entreno seis días y ya tomo whey + creatina. ¿Me sumás glutamina para recuperar?”</p><div class="choice-list"><button class="choice" onclick="bossAnswer(true)">Primero necesito entender el descanso y la recuperación.</button><button class="choice" onclick="bossAnswer(false)">Sí. Sumemos glutamina.</button><button class="choice" onclick="bossAnswer(false)">Mejor agregaría otro suplemento.</button></div><div class="signature">TIBY · THE BOSS</div></div></div></div>
+</section>
 
-      <div class="goal-progress-row">
-        <strong id="weeklyProgress">0 / 0</strong>
-        <span id="weeklyReward">+100 pts al completar</span>
-      </div>
-      <div id="goalSegments" class="goal-segments" aria-label="Progreso del objetivo semanal"></div>
-      <p id="weeklyMessage" class="muted goal-message">Tu semana empieza con un compromiso.</p>
-    </section>
+<section id="final" class="screen" hidden>
+<p class="eyebrow">RESULTADO</p><h1><span id="overall"></span></h1><p class="muted">Puntaje general del turno.</p>
+<div class="metric-grid"><div class="metric"><span>ESCUCHA</span><strong id="sListen"></strong></div><div class="metric"><span>CRITERIO</span><strong id="sCriterion"></strong></div><div class="metric"><span>CONVERSACIÓN</span><strong id="sConversation"></strong></div><div class="metric"><span>RECOMENDACIÓN</span><strong id="sRecommendation"></strong></div></div>
+<div class="card"><p class="eyebrow">RANGO</p><h2 id="rank"></h2></div>
+<div class="boss-hero" style="margin-top:18px"><img id="reviewImage" alt=""><div class="boss-copy"><p class="eyebrow">THE BOSS REVIEW</p><p id="verdict" class="lead"></p><div class="signature">TIBY · THE BOSS</div></div></div>
+<div class="actions"><button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button><button class="primary" onclick="reset()"><span>VOLVER A EMPEZAR</span><span>↻</span></button></div>
+</section>
 
-    <section class="today-card">
-      <div>
-        <p class="card-label">Hoy</p>
-        <p id="todayLabel" class="today-date">—</p>
-      </div>
-      <div id="todayBadge" class="badge">Pendiente</div>
-    </section>
-
-    <button id="trainButton" class="primary-button" type="button">
-      <span>ENTRENÉ HOY</span>
-      <span aria-hidden="true">＋</span>
-    </button>
-
-    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
-
-    <section class="history-section" aria-labelledby="historyTitle">
-      <div class="section-heading">
-        <h2 id="historyTitle">Últimos 7 días</h2>
-        <span id="totalCount" class="mini-stat">0 entrenamientos</span>
-      </div>
-      <div id="weekGrid" class="week-grid" aria-label="Historial de los últimos siete días"></div>
-    </section>
-
-    <details class="settings">
-      <summary>Opciones</summary>
-      <div class="settings-body">
-        <p>El objetivo, los entrenamientos y los puntos se guardan únicamente en este dispositivo durante esta etapa de prueba.</p>
-        <div class="settings-actions">
-          <button id="changeGoalButton" class="secondary-button neutral" type="button">Cambiar objetivo semanal</button>
-          <button id="resetButton" class="secondary-button" type="button">Borrar datos de prueba</button>
-        </div>
-      </div>
-    </details>
-
-    <footer>
-      <p>ENTRENO V0.3 · Tu objetivo, tu constancia</p>
-    </footer>
-  </main>
-
-  <script src="./app.js" defer></script>
-</body>
-</html>
+<section id="review" class="screen" hidden><p class="eyebrow">REVISIÓN</p><h2>Tu turno, caso por caso.</h2><div id="reviewList"></div><div class="actions"><button class="secondary" onclick="show('final')"><span>VOLVER AL RESULTADO</span><span>←</span></button></div></section>
+</main>
+<script src="data/module.js"></script><script src="data/clients.js"></script><script src="app.js"></script></body></html>
