@@ -4,7 +4,7 @@ window.MODULE={
   "category": "GLUTAMINA",
   "brand": "PITBULL SUPLEMENTOS",
   "product": "Glutamine Micronized 300 g",
-  "packshot": "assets/glutamina.jpg",
+  "packshot": "assets/glutamina.webp",
   "title": "Detectá la oportunidad.",
   "subtitle": "Aprendé a identificar cuándo el producto puede responder al objetivo del cliente.",
   "clients": 6,
