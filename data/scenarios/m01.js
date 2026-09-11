@@ -52,8 +52,8 @@
     }
   };
 
-  // PRE-PILOT V1.1.3 · conversación, mapa y decisiones sin contexto.
-  // Se aplican al cargar para mantener la lógica general de Academy intacta.
+  // PRE-PILOT V1.1.4 · conversación, mapa y decisiones siempre accionables.
+  // Las decisiones prematuras generan consecuencia; PREGUNTAR MÁS vuelve a la conversación.
   window.addEventListener('DOMContentLoaded',()=>{
     const sanitizeChat=chat=>{
       const source=Array.isArray(chat)?chat:[],out=[],seenUserLines=new Set();
@@ -125,29 +125,50 @@
       renderChat({scroll:false,follow:true});
     };
 
-    const baseDecide=window.decide;
-    window.decide=function(action){
+    const runDecision=action=>{
       if(action==='ASK_MORE'){
         tap();renderChat({scroll:true});return;
       }
+
+      tap();
       const p=MP(),c=current();
+      if(!c)return;
+      const sc=calc(action);
+      const correct=action===c.answer;
       const turns=(p.chat||[]).filter(x=>x.who==='you').length;
+      const enough=sc.listen>=67;
+      let strength,title,note,copy;
+
       if(turns===0){
-        tap();
-        const correct=action===c.answer;
-        const sc=calc(action);
         sc.listen=0;
         sc.criterion=correct?55:20;
         sc.recommendation=correct?45:15;
-        const strength=correct?'mid':'bad';
-        const title=correct?'Dirección posible, sin contexto':'Decidiste demasiado pronto';
-        const note=correct
+        strength=correct?'mid':'bad';
+        title=correct?'Dirección posible, sin contexto':'Decidiste demasiado pronto';
+        note=correct
           ?'La acción podría alinearse con el objetivo, pero llegaste a ella sin hacer una sola pregunta.'
           :'Elegiste una acción antes de entender qué estaba intentando resolver el cliente.';
-        const copy=correct?c.reaction.early:c.reaction.bad;
-        p.pending={action,sc,correct,strength,title,note,copy};p.lostPending=null;save();renderReaction();return;
+        copy=correct?c.reaction.early:c.reaction.bad;
+      }else if(correct&&enough&&sc.conversation>=55){
+        strength='good';title='Buena lectura';note='La acción coincide con el contexto que construiste.';copy=c.reaction.good;
+      }else if(correct&&!enough){
+        strength='mid';title='Buena dirección, demasiado pronto';note='La acción puede tener sentido, pero todavía faltaba contexto.';copy=c.reaction.early;
+      }else{
+        strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad;
       }
-      return baseDecide(action);
+
+      p.pending={action,sc,correct,strength,title,note,copy};
+      p.lostPending=null;
+      save();
+      renderReaction();
+    };
+
+    window.academyDecision=runDecision;
+    window.decide=runDecision;
+    window.renderDecision=function(){
+      const m=activeModule();
+      const actions=m?.decisionActions||[];
+      el('decisionList').innerHTML=actions.map(a=>`<button class="decision" onclick="academyDecision('${a.id}')"><b>${actionLabel(a)}</b><span>${a.hint}</span></button>`).join('');
     };
   });
 })();
