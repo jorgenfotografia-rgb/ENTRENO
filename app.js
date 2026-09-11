@@ -1,7 +1,7 @@
-const M=window.MODULE, C=window.CLIENTS;
+const M=window.MODULE, C=window.CLIENTS, P=window.PRODUCTS||[];
 const A=id=>`assets/${id}`;
 const KEY='pitbull-academy-quality-pass-01';
-const fresh=()=>({view:'home',current:0,completed:[],chat:[],node:'start',discovered:[],rapport:62,results:[],bossCheck:null,pending:null,lostPending:null});
+const fresh=()=>({view:'home',current:0,completed:[],chat:[],node:'start',discovered:[],rapport:62,results:[],bossCheck:null,pending:null,lostPending:null,selectedProduct:'glutamina-300g'});
 let S=load();
 
 function load(){try{return Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return fresh()}}
@@ -16,31 +16,39 @@ function enterAcademy(){
   splash.classList.add('splash-out');
   window.setTimeout(()=>{splash.hidden=true;splash.classList.remove('splash-out')},220);
 }
+function syncTopline(view){
+  const productMode=view==='catalog'||view==='product';
+  el('appcode').textContent=productMode?'PITBULL ACADEMY · PRODUCTOS':`PITBULL ACADEMY · ${M.code}`;
+  el('moduleMeter').style.visibility=productMode?'hidden':'visible';
+}
 function show(id,{scroll=true}={}){
   document.querySelectorAll('.screen').forEach(x=>x.hidden=true);
   el(id).hidden=false;
   S.view=id;
+  syncTopline(id);
   save();
   if(scroll)window.scrollTo({top:0,behavior:'smooth'});
 }
 function current(){return C[S.current]}
+function selectedProduct(){return P.find(p=>p.id===S.selectedProduct)||P[0]}
 function discoveredSet(){return new Set(S.discovered||[])}
 function setPhoto(id,c){const node=el(id);if(!node)return;node.src=A(`${c.id}.svg`);node.alt=c.name}
 function updateMeter(){const done=S.completed.length,total=M.clients||6,pct=Math.max(0,Math.min(1,done/total));el('moduleMeter').style.setProperty('--p',`${pct*360}deg`);el('moduleMeterText').textContent=`${done}/${total}`}
 
 function render(){
-  el('appcode').textContent=`PITBULL ACADEMY · ${M.code}`;
   el('moduleTitle').textContent=M.title;
   el('moduleSubtitle').textContent=M.subtitle;
   el('moduleMeta').textContent=`${M.clients} CLIENTES · ${M.category}`;
   el('moduleBrand').textContent=M.brand;
   el('moduleProgress').style.width=`${Math.round((S.completed.length/M.clients)*100)}%`;
   el('resumeText').textContent=S.completed.length?`${S.completed.length}/${M.clients} clientes completados`:'Listo para comenzar';
-  updateMeter();renderMap();resumeView();
+  if(el('productCount'))el('productCount').textContent=P.length;
+  updateMeter();renderMap();renderCatalog();resumeView();
 }
 function resumeView(){
   const v=S.view||'home';
-  if(v==='home'||v==='module'||v==='map'){show(v,{scroll:false});return}
+  if(v==='home'||v==='module'||v==='map'||v==='catalog'){if(v==='catalog')renderCatalog();show(v,{scroll:false});return}
+  if(v==='product'){renderProduct(false);return}
   if(v==='case'){renderCase(false);return}
   if(v==='chat'&&S.chat?.length){renderChat({scroll:false});return}
   if(v==='decision'){show('decision',{scroll:false});return}
@@ -52,6 +60,53 @@ function resumeView(){
 }
 function openModule(){tap();show('module')}
 function startModule(){tap();show('map')}
+
+function renderCatalog(){
+  if(!el('productList'))return;
+  el('productList').innerHTML=P.map(p=>{
+    const active=p.status==='active';
+    return `<button class="product-row" onclick="openProduct('${p.id}')">
+      <span class="product-thumb"><img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.style.visibility='hidden'"></span>
+      <span class="product-row-copy">
+        <span class="product-row-meta">${active?`${p.module} · ACTIVO`:'BASE INCORPORADA'}</span>
+        <strong>${p.name}</strong>
+        <span class="small">${p.category}</span>
+      </span>
+      <span class="product-row-arrow">${active?'→':'›'}</span>
+    </button>`;
+  }).join('');
+}
+function openCatalog(){tap();renderCatalog();show('catalog')}
+function openProduct(id){
+  tap();S.selectedProduct=id;save();renderProduct(true);
+}
+function renderProduct(scroll=true){
+  const p=selectedProduct();if(!p){openCatalog();return}
+  const img=el('productImage');
+  img.src=p.image;img.alt=p.name;img.style.visibility='visible';
+  img.onerror=()=>{img.style.visibility='hidden'};
+  el('productBrand').textContent=p.brand;
+  el('productName').textContent=p.name;
+  el('productSummary').textContent=p.summary;
+  el('productCategory').textContent=p.category;
+  el('productPresentation').textContent=p.presentation;
+  el('productFormat').textContent=`${p.package} · ${p.type}`;
+  el('productFlavors').textContent=p.flavors.join(' · ');
+  const active=p.status==='active';
+  el('productStatus').textContent=active?`${p.module} · MÓDULO ACTIVO`:'BASE INCORPORADA';
+  el('productStatus').className=`product-status ${active?'is-active':''}`;
+  const btn=el('productModuleButton');
+  btn.disabled=!active;
+  btn.className=(active?'primary':'secondary')+' product-module-button';
+  btn.innerHTML=active?'<span>ENTRAR AL MÓDULO M01</span><span>→</span>':'<span>MÓDULO EN PREPARACIÓN</span><span>·</span>';
+  show('product',{scroll});
+}
+function openProductModule(){
+  const p=selectedProduct();
+  if(!p||p.status!=='active')return;
+  openModule();
+}
+
 function renderMap(){
   updateMeter();
   el('clientList').innerHTML=C.map((c,i)=>{
