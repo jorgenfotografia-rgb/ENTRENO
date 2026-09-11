@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#0b0c0d"><title>Pitbull Academy · Quality Pass 01</title><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css"></head><body>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#0b0c0d"><title>Pitbull Academy · Quality Pass 01</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="assets/icon-192.png"><link rel="apple-touch-icon" href="assets/icon-192.png"><link rel="stylesheet" href="styles.css"></head><body>
 <main class="app">
 <div class="topline"><div id="appcode" class="appcode">PITBULL ACADEMY · M01</div><span class="status-dot"></span></div>
 
@@ -13,7 +13,7 @@
 
 <section id="module" class="screen" hidden>
 <p class="eyebrow">M01 · PRODUCTO</p><h2>Lo que vas a entrenar.</h2>
-<div class="card product-layout"><img src="assets/glutamina.webp" alt=""><div><p class="eyebrow">PITBULL SUPLEMENTOS</p><h3>Glutamine Micronized 300 g</h3><p class="muted">Producto del módulo actual. Academy mantiene su interfaz; la marca vive dentro del contenido.</p></div></div>
+<div class="card product-layout"><img src="assets/glutamina.jpg" alt=""><div><p class="eyebrow">PITBULL SUPLEMENTOS</p><h3>Glutamine Micronized 300 g</h3><p class="muted">Producto del módulo actual. Academy mantiene su interfaz; la marca vive dentro del contenido.</p></div></div>
 <div class="points"><div class="point">Escuchar antes de recomendar.</div><div class="point">Separar objetivo de producto.</div><div class="point">Reconocer cuándo no ofrecer.</div></div>
 <p class="provisional">Contenido provisional. Auditoría documental pendiente antes de publicar el módulo definitivo.</p>
 <div class="actions"><button class="primary" onclick="startModule()"><span>EMPEZAR SIMULADOR</span><span>→</span></button><button class="tertiary" onclick="show('home')"><span>VOLVER</span><span>←</span></button></div>
@@ -25,12 +25,12 @@
 </section>
 
 <section id="case" class="screen" hidden>
-<p id="caseNum" class="eyebrow"></p><div class="case-person"><img id="caseAvatar" alt=""><div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div></div>
+<p id="caseNum" class="eyebrow"></p><div class="case-person"><span id="caseAvatar" class="client-avatar" aria-hidden="true"></span><div><div><span id="caseName" class="name"></span> · <span id="caseAge" class="accent name"></span></div><span id="caseLabel" class="small"></span></div></div>
 <p id="caseQuote" class="case-quote"></p><div class="actions"><button class="primary" onclick="beginChat()"><span>ATENDER</span><span>→</span></button><button class="tertiary" onclick="renderMap();show('map')"><span>VOLVER</span><span>←</span></button></div>
 </section>
 
 <section id="chat" class="screen" hidden>
-<div class="chat-head"><img id="chatAvatar" alt=""><div><strong id="chatName"></strong><span id="chatLabel"></span></div></div>
+<div class="chat-head"><span id="chatAvatar" class="client-avatar small-avatar" aria-hidden="true"></span><div><strong id="chatName"></strong><span id="chatLabel"></span></div></div>
 <div id="thread" class="thread"></div><div id="choices" class="choice-list"></div>
 <button id="resolve" class="secondary resolve is-early" onclick="openDecision()"></button>
 </section>
@@ -46,7 +46,7 @@
 </section>
 
 <section id="reaction" class="screen" hidden>
-<p class="eyebrow">CONSECUENCIA</p><div class="reaction-person"><img id="reactAvatar" alt=""><div><strong id="reactName"></strong><span class="small">Cliente</span></div></div>
+<p class="eyebrow">CONSECUENCIA</p><div class="reaction-person"><span id="reactAvatar" class="client-avatar small-avatar" aria-hidden="true"></span><div><strong id="reactName"></strong><span class="small">Cliente</span></div></div>
 <p id="clientLine" class="client-line"></p>
 <div id="learning" class="learning"><p class="eyebrow">APRENDIZAJE</p><div id="resultTitle" class="result"></div><p id="resultNote" class="muted"></p><p id="learnText" class="small"></p></div>
 <div class="actions"><button id="reactionNext" class="primary" onclick="commit()"><span>CONTINUAR</span><span>→</span></button></div>
