@@ -14,7 +14,8 @@
     bossCheck:{afterCaseIndex:2,image:'tiby-boss-check.webp',title:'Lectura rápida.',prompt:'Duermo cuatro horas, entreno seis días y ya tomo whey + creatina. ¿Me sumás glutamina para recuperar?',options:[{text:'Primero necesito entender el descanso y la recuperación.',correct:true},{text:'Sí. Sumemos glutamina.',correct:false},{text:'Mejor agregaría otro suplemento.',correct:false}],result:{goodTitle:'Bien leído.',badTitle:'Demasiado rápido.',goodText:'Dormir cuatro horas obliga a mirar primero la base antes de evaluar otro producto.',badText:'La carga de entrenamiento no convierte automáticamente a un suplemento en la respuesta cuando aparece una base claramente comprometida.'}}
   };
 
-  // PRE-PILOT V1.1.7 · VISUAL CLIENT PILOT · interaction fix.
+  // PRE-PILOT V1.1.8 · VISUAL CLIENT PILOT.
+  // La capa visual no interviene en el motor de conversación.
   window.addEventListener('DOMContentLoaded',()=>{
     const baseCommit=window.commit;
     const clientVisual=(c,kind='face')=>c?.visual?.[kind]||c?.visual?.face||A(`${c.id}.svg`);
@@ -22,32 +23,89 @@
     window.setPhoto=function(id,c,kind='face'){const node=el(id);if(!node||!c)return;node.src=clientVisual(c,kind);node.alt=`${c.name} · referencia visual piloto`};
 
     const clientList=el('clientList');
-    if(clientList&&!el('visualPilotNote')){const note=document.createElement('div');note.id='visualPilotNote';note.className='visual-pilot-note';note.innerHTML='<strong>VISUAL PILOT</strong><span>La misma referencia de Camila se usa temporalmente en todos los clientes para validar la experiencia visual.</span>';clientList.parentNode.insertBefore(note,clientList)}
+    if(clientList&&!el('visualPilotNote')){
+      const note=document.createElement('div');
+      note.id='visualPilotNote';
+      note.className='visual-pilot-note';
+      note.innerHTML='<strong>VISUAL PILOT</strong><span>La misma referencia de Camila se usa temporalmente en todos los clientes para validar la experiencia visual.</span>';
+      clientList.parentNode.insertBefore(note,clientList);
+    }
 
     const decisionList=el('decisionList');
-    if(decisionList&&!el('decisionPerson')){const person=document.createElement('div');person.id='decisionPerson';person.className='decision-person';person.innerHTML='<img id="decisionAvatar" class="client-photo decision-photo" alt=""><div><span>CLIENTE EN CURSO</span><strong id="decisionName"></strong><small id="decisionLabel"></small></div>';decisionList.parentNode.insertBefore(person,decisionList)}
+    if(decisionList&&!el('decisionPerson')){
+      const person=document.createElement('div');
+      person.id='decisionPerson';
+      person.className='decision-person';
+      person.innerHTML='<img id="decisionAvatar" class="client-photo decision-photo" alt=""><div><span>CLIENTE EN CURSO</span><strong id="decisionName"></strong><small id="decisionLabel"></small></div>';
+      decisionList.parentNode.insertBefore(person,decisionList);
+    }
 
-    const sanitizeChat=chat=>{const source=Array.isArray(chat)?chat:[],out=[],seenUserLines=new Set();for(let i=0;i<source.length;i++){const m=source[i];if(m?.who==='you'){const key=(m.text||'').trim();const next=source[i+1];if(key&&seenUserLines.has(key)){if(next?.who==='client')i++;continue}if(key)seenUserLines.add(key)}out.push(m)}return out};
+    window.renderMap=function(){
+      const m=activeModule(),clients=C(),p=MP();if(!m||!el('clientList'))return;updateMeter();
+      el('mapMeta').textContent=`SIMULADOR · ${clients.length} CASOS`;
+      el('clientList').innerHTML=clients.map((c,i)=>{
+        const done=p.completed.includes(i),unlocked=i<=p.completed.length;
+        const action=done?`reviewCompletedCase(${i})`:`startClient(${i})`;
+        return `<button class="cast-item ${done?'is-complete':''}" ${unlocked?'':'disabled'} onclick="${action}">
+          <img class="client-photo" src="${clientVisual(c,'face')}" alt="${c.name} · referencia visual piloto">
+          <div><span class="num">${String(i+1).padStart(2,'0')} · ${done?'COMPLETADO':'CLIENTE'}</span><strong>${c.name}</strong><span class="small">${c.label}${!done&&c.bossChallenge?' · Boss Challenge':''}</span>${done?'<span class="review-tag">REVISAR CASO</span>':''}</div>
+          <span class="arrow">${done?'✓':unlocked?'→':'·'}</span>
+        </button>`;
+      }).join('');
+    };
 
-    window.renderMap=function(){const m=activeModule(),clients=C(),p=MP();if(!m||!el('clientList'))return;updateMeter();el('mapMeta').textContent=`SIMULADOR · ${clients.length} CASOS`;el('clientList').innerHTML=clients.map((c,i)=>{const done=p.completed.includes(i),unlocked=i<=p.completed.length;const action=done?`reviewCompletedCase(${i})`:`startClient(${i})`;return `<button class="cast-item ${done?'is-complete':''}" ${unlocked?'':'disabled'} onclick="${action}"><img class="client-photo" src="${clientVisual(c,'face')}" alt="${c.name} · referencia visual piloto"><div><span class="num">${String(i+1).padStart(2,'0')} · ${done?'COMPLETADO':'CLIENTE'}</span><strong>${c.name}</strong><span class="small">${c.label}${!done&&c.bossChallenge?' · Boss Challenge':''}</span>${done?'<span class="review-tag">REVISAR CASO</span>':''}</div><span class="arrow">${done?'✓':unlocked?'→':'·'}</span></button>`}).join('')};
-
-    window.followConversation=function(){requestAnimationFrame(()=>requestAnimationFrame(()=>{const thread=el('thread');if(!thread)return;const replies=[...thread.querySelectorAll('.bubble.client')],last=replies[replies.length-1];if(!last)return;const rect=last.getBoundingClientRect();const offset=Math.max(110,Math.min(180,window.innerHeight*.18));window.scrollTo({top:Math.max(0,window.scrollY+rect.top-offset),behavior:'smooth'})}))};
-
-    const runChoice=index=>{const i=Number(index);if(!Number.isInteger(i))return;tap();const p=MP(),c=current();if(!c)return;p.chat=sanitizeChat(p.chat);const raw=c.nodes?.[p.node]||[],o=raw[i];if(!o)return;const key=(o.t||'').trim();const alreadyUsed=p.chat.some(m=>m.who==='you'&&(m.text||'').trim()===key);if(alreadyUsed){save();renderChat({scroll:false});return}const d=discoveredSet();p.chat.push({who:'you',text:o.t});p.chat.push({who:'client',text:o.r,q:o.q});(o.facts||[]).forEach(f=>d.add(f));p.discovered=[...d];p.rapport=Math.max(0,Math.min(100,p.rapport+o.q));p.node=o.next;save();if(p.rapport<22){lost();return}renderChat({scroll:false,follow:true})};
-    window.academyChooseLine=runChoice;
-    window.chooseLine=runChoice;
-
-    window.renderChat=function({scroll=true,follow=false}={}){const p=MP(),c=current();if(!c)return;p.chat=sanitizeChat(p.chat);if(!p.chat.length&&c.intro)p.chat=[{who:'client',text:c.intro}];setPhoto('chatAvatar',c,'chat');el('chatName').textContent=c.name;el('chatLabel').textContent=c.label;el('thread').innerHTML=p.chat.map(m=>{const rx=m.q!==undefined?rtxt(m.q):null;return `<div class="bubble ${m.who==='client'?'client':'you'}">${m.text}</div>${rx?`<div class="reaction ${rx[1]}">${rx[0]}</div>`:''}`}).join('');const used=new Set(p.chat.filter(x=>x.who==='you').map(x=>(x.text||'').trim()));const raw=c.nodes?.[p.node]||[],opts=raw.map((o,idx)=>({o,idx})).filter(({o})=>!used.has((o.t||'').trim()));const choiceRoot=el('choices');choiceRoot.innerHTML=opts.map(({o,idx})=>`<button type="button" class="choice" data-choice-index="${idx}">${o.t}</button>`).join('');choiceRoot.querySelectorAll('[data-choice-index]').forEach(btn=>btn.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();runChoice(Number(btn.dataset.choiceIndex))}));const turns=p.chat.filter(x=>x.who==='you').length,ready=turns>=2;el('resolve').className=(ready?'primary':'secondary')+' resolve';el('resolve').innerHTML=`<span>${ready?'TOMAR DECISIÓN':'RESOLVER AHORA'}</span><span>→</span>`;save();show('chat',{scroll});if(follow)followConversation()};
-
-    const commitAfterConsequence=()=>{const p=MP(),o=p.pending;if(!o)return;if(o.unlockAt&&Date.now()<o.unlockAt)return;baseCommit()};
+    const commitAfterConsequence=()=>{
+      const p=MP(),o=p.pending;if(!o)return;
+      if(o.unlockAt&&Date.now()<o.unlockAt)return;
+      baseCommit();
+    };
     window.commitAcademyDecision=commitAfterConsequence;
 
-    window.renderReaction=function({scroll=true}={}){const p=MP(),c=current(),o=p.pending;if(!o){renderMap();show('map',{scroll});return}setPhoto('reactAvatar',c,'reaction');el('reactName').textContent=c.name;el('clientLine').textContent=`“${o.copy}”`;el('learning').className=`learning ${o.strength}`;el('resultTitle').textContent=o.title;el('resultNote').textContent=o.note;el('learnText').textContent=c.explain;const next=el('reactionNext');next.onclick=commitAfterConsequence;next.disabled=true;next.innerHTML='<span>CONTINUAR</span><span>→</span>';show('reaction',{scroll});const wait=Math.max(0,(o.unlockAt||Date.now())-Date.now());window.setTimeout(()=>{if(MP().pending===o)next.disabled=false},wait)};
+    window.renderReaction=function({scroll=true}={}){
+      const p=MP(),c=current(),o=p.pending;
+      if(!o){renderMap();show('map',{scroll});return}
+      setPhoto('reactAvatar',c,'reaction');
+      el('reactName').textContent=c.name;
+      el('clientLine').textContent=`“${o.copy}”`;
+      el('learning').className=`learning ${o.strength}`;
+      el('resultTitle').textContent=o.title;
+      el('resultNote').textContent=o.note;
+      el('learnText').textContent=c.explain;
+      const next=el('reactionNext');
+      next.onclick=commitAfterConsequence;
+      next.disabled=true;
+      next.innerHTML='<span>CONTINUAR</span><span>→</span>';
+      show('reaction',{scroll});
+      const wait=Math.max(0,(o.unlockAt||Date.now())-Date.now());
+      window.setTimeout(()=>{if(MP().pending===o)next.disabled=false},wait);
+    };
 
-    const runDecision=action=>{if(action==='ASK_MORE'){tap();renderChat({scroll:true});return}tap();const p=MP(),c=current();if(!c)return;const sc=calc(action),correct=action===c.answer,turns=(p.chat||[]).filter(x=>x.who==='you').length,enough=sc.listen>=67;let strength,title,note,copy;if(turns===0){sc.listen=0;sc.criterion=correct?55:20;sc.recommendation=correct?45:15;strength=correct?'mid':'bad';title=correct?'Dirección posible, sin contexto':'Decidiste demasiado pronto';note=correct?'La acción podría alinearse con el objetivo, pero llegaste a ella sin hacer una sola pregunta.':'Elegiste una acción antes de entender qué estaba intentando resolver el cliente.';copy=correct?c.reaction.early:c.reaction.bad}else if(correct&&enough&&sc.conversation>=55){strength='good';title='Buena lectura';note='La acción coincide con el contexto que construiste.';copy=c.reaction.good}else if(correct&&!enough){strength='mid';title='Buena dirección, demasiado pronto';note='La acción puede tener sentido, pero todavía faltaba contexto.';copy=c.reaction.early}else{strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad}p.pending={action,sc,correct,strength,title,note,copy,unlockAt:Date.now()+700};p.lostPending=null;save();renderReaction()};
+    const runDecision=action=>{
+      if(action==='ASK_MORE'){tap();renderChat({scroll:true});return}
+      tap();
+      const p=MP(),c=current();if(!c)return;
+      const sc=calc(action),correct=action===c.answer,turns=(p.chat||[]).filter(x=>x.who==='you').length,enough=sc.listen>=67;
+      let strength,title,note,copy;
+      if(turns===0){
+        sc.listen=0;sc.criterion=correct?55:20;sc.recommendation=correct?45:15;
+        strength=correct?'mid':'bad';
+        title=correct?'Dirección posible, sin contexto':'Decidiste demasiado pronto';
+        note=correct?'La acción podría alinearse con el objetivo, pero llegaste a ella sin hacer una sola pregunta.':'Elegiste una acción antes de entender qué estaba intentando resolver el cliente.';
+        copy=correct?c.reaction.early:c.reaction.bad;
+      }else if(correct&&enough&&sc.conversation>=55){strength='good';title='Buena lectura';note='La acción coincide con el contexto que construiste.';copy=c.reaction.good}
+      else if(correct&&!enough){strength='mid';title='Buena dirección, demasiado pronto';note='La acción puede tener sentido, pero todavía faltaba contexto.';copy=c.reaction.early}
+      else{strength='bad';title='Revisá la lectura';note='La acción no responde bien al objetivo que venía mostrando.';copy=c.reaction.bad}
+      p.pending={action,sc,correct,strength,title,note,copy,unlockAt:Date.now()+700};
+      p.lostPending=null;save();renderReaction();
+    };
 
     window.academyDecision=runDecision;
     window.decide=runDecision;
-    window.renderDecision=function(){const m=activeModule(),c=current();if(c){setPhoto('decisionAvatar',c,'face');el('decisionName').textContent=c.name;el('decisionLabel').textContent=c.label}const actions=m?.decisionActions||[];el('decisionList').innerHTML=actions.map(a=>`<button type="button" class="decision" onclick="event.preventDefault();event.stopPropagation();academyDecision('${a.id}');return false"><b>${actionLabel(a)}</b><span>${a.hint}</span></button>`).join('')};
+    window.renderDecision=function(){
+      const m=activeModule(),c=current();
+      if(c){setPhoto('decisionAvatar',c,'face');el('decisionName').textContent=c.name;el('decisionLabel').textContent=c.label}
+      const actions=m?.decisionActions||[];
+      el('decisionList').innerHTML=actions.map(a=>`<button type="button" class="decision" onclick="event.preventDefault();event.stopPropagation();academyDecision('${a.id}');return false"><b>${actionLabel(a)}</b><span>${a.hint}</span></button>`).join('');
+    };
   });
 })();
