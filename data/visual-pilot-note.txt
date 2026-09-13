@@ -1,0 +1,1 @@
+Visual pilot V1.1.8 restores conversation handling to the core app engine. Scenario layer no longer overrides renderChat/chooseLine/followConversation.
