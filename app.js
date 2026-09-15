@@ -11,58 +11,169 @@ const DEFAULT_MODULE_ID=(MODULES.find(m=>m.status==='active')||MODULES[0]||{}).i
 const LEGACY_PROGRESS_KEYS=['current','completed','chat','node','discovered','rapport','results','bossCheck','pending','lostPending','startedAt','finishedAt'];
 
 const blankModuleProgress=()=>({current:0,completed:[],chat:[],node:'start',discovered:[],rapport:62,results:[],bossCheck:null,pending:null,lostPending:null,startedAt:null,finishedAt:null,revision:0});
-const fresh=()=>({view:'home',selectedModule:DEFAULT_MODULE_ID,selectedProduct:'glutamina-300g',catalogBrand:'all',pilotAlias:'',moduleProgress:{}});
-
+const SCHEMA_VERSION=1;
+const BACKUP_KEY=KEY+'-before-phase1';
+const RECOVERY_KEY=KEY+'-recovery';
+const persistence={lastStored:null,issue:null};
+const fresh=()=>({schemaVersion:SCHEMA_VERSION,storageRevision:0,view:'home',selectedModule:DEFAULT_MODULE_ID,selectedProduct:'glutamina-300g',catalogBrand:'all',pilotAlias:'',moduleProgress:{}});
+const record=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const list=x=>Array.isArray(x)?x:[];
+const validScores=x=>record(x)&&['listen','criterion','conversation','recommendation'].every(k=>Number.isFinite(x[k])&&x[k]>=0&&x[k]<=100);
 function uniqueResults(results=[]){
   const byCase=new Map();
-  results.forEach(r=>{if(r&&Number.isInteger(r.i))byCase.set(r.i,r)});
+  list(results).forEach(r=>{if(r&&Number.isInteger(r.i))byCase.set(r.i,r)});
   return [...byCase.values()].sort((a,b)=>a.i-b.i);
 }
-function normalizeProgress(input={}){
-  const p=Object.assign(blankModuleProgress(),input||{});
-  p.completed=[...new Set((p.completed||[]).filter(Number.isInteger))].sort((a,b)=>a-b);
-  p.results=uniqueResults(p.results||[]);
-  p.chat=Array.isArray(p.chat)?p.chat:[];
-  p.discovered=[...new Set(Array.isArray(p.discovered)?p.discovered:[])];
+function normalizeProgress(input={},moduleId=DEFAULT_MODULE_ID){
+  const source=record(input)?input:{},p={...blankModuleProgress(),...source};
+  const m=MODULES.find(m=>m.id===moduleId),scenario=SCENARIOS[m?.scenarioId],clients=scenario?.clients||[];
+  const validIndex=i=>Number.isInteger(i)&&i>=0&&i<clients.length;
+  const validAction=a=>a==='LOST'||m?.decisionActions?.some(x=>x.id===a);
+  p.results=uniqueResults(list(p.results).filter(r=>record(r)&&validIndex(r.i)&&validAction(r.action)&&validScores(r.scores)))
+    .map(r=>({...r,name:clients[r.i].name,correct:!!r.correct}));
+  // A completion without its result cannot be reconstructed without inventing a score.
+  p.completed=p.results.map(r=>r.i);
+  p.current=validIndex(p.current)?p.current:(clients.findIndex((c,i)=>!p.completed.includes(i))+clients.length)%Math.max(1,clients.length);
+  p.chat=list(p.chat).filter(x=>record(x)&&['you','client'].includes(x.who)&&typeof x.text==='string'&&(x.q===undefined||Number.isFinite(x.q)));
+  const c=clients[p.current];
+  p.discovered=[...new Set(list(p.discovered).filter(f=>typeof f==='string'&&c?.facts.includes(f)))];
+  p.rapport=Number.isFinite(p.rapport)?Math.max(0,Math.min(100,p.rapport)):62;
+  p.revision=Number.isSafeInteger(p.revision)&&p.revision>=0?p.revision:0;
+  p.bossCheck=Number.isInteger(p.bossCheck)&&scenario?.bossCheck?.options[p.bossCheck]?p.bossCheck:null;
+  p.startedAt=Number.isFinite(p.startedAt)&&p.startedAt>0?p.startedAt:null;
+  p.finishedAt=Number.isFinite(p.finishedAt)&&p.finishedAt>0&&p.completed.length===clients.length?p.finishedAt:null;
+  const pending=p.pending;
+  p.pending=record(pending)&&validAction(pending.action)&&pending.action!=='ASK_MORE'&&pending.action!=='LOST'&&validScores(pending.sc)
+    &&['good','mid','bad'].includes(pending.strength)&&['title','note','copy'].every(k=>typeof pending[k]==='string')
+    ?{...pending,unlockAt:Number.isFinite(pending.unlockAt)?pending.unlockAt:0}:null;
+  p.lostPending=record(p.lostPending)&&validScores(p.lostPending.scores)?p.lostPending:null;
+  if(p.pending)p.lostPending=null;
+  if(p.completed.includes(p.current)){p.pending=null;p.lostPending=null}
+  if(!c||!(p.node==='end'||Object.hasOwn(c.nodes,p.node))){
+    p.node='start';p.chat=[];p.discovered=[];p.rapport=62;p.pending=null;p.lostPending=null;
+  }
+  // Never silently reconstruct a broken conversation's scoring from prose.
+  if(p.chat.some(x=>x.who==='you')===false&&p.node!=='start'&&!p.pending&&!p.lostPending){
+    p.node='start';p.discovered=[];p.rapport=62;
+  }
   return p;
 }
-function progressWeight(p={}){
-  const n=normalizeProgress(p);
-  return n.completed.length*1000+n.results.length*100+(n.chat?.length||0)*2+(n.pending||n.lostPending?5:0);
-}
-function legacyProgress(raw={}){
-  const hasLegacy=LEGACY_PROGRESS_KEYS.some(k=>Object.prototype.hasOwnProperty.call(raw,k));
-  if(!hasLegacy)return null;
-  return normalizeProgress(Object.fromEntries(LEGACY_PROGRESS_KEYS.filter(k=>Object.prototype.hasOwnProperty.call(raw,k)).map(k=>[k,raw[k]])));
-}
+function hasActivity(p){return record(p)&&(list(p.completed).length||list(p.results).length||list(p.chat).length||p.pending||p.lostPending||p.startedAt)}
 function migrate(raw={}){
-  const next=Object.assign(fresh(),raw||{});
-  next.moduleProgress=next.moduleProgress||{};
-  if(DEFAULT_MODULE_ID){
-    const currentProgress=normalizeProgress(next.moduleProgress[DEFAULT_MODULE_ID]||{});
-    const legacy=legacyProgress(raw);
-    next.moduleProgress[DEFAULT_MODULE_ID]=legacy&&progressWeight(legacy)>progressWeight(currentProgress)?legacy:currentProgress;
+  if(!record(raw))throw new Error('invalid storage record');
+  if(raw.schemaVersion!==undefined&&raw.schemaVersion!==SCHEMA_VERSION)throw new Error('unsupported schema');
+  const next={...fresh(),...raw,schemaVersion:SCHEMA_VERSION};
+  next.moduleProgress=record(raw.moduleProgress)?{...raw.moduleProgress}:{};
+  if(raw.schemaVersion===undefined&&DEFAULT_MODULE_ID){
+    const legacy=Object.fromEntries(LEGACY_PROGRESS_KEYS.filter(k=>Object.hasOwn(raw,k)).map(k=>[k,raw[k]]));
+    const scoped=next.moduleProgress[DEFAULT_MODULE_ID];
+    // An existing active module record is authoritative; never rank two divergent sessions by length.
+    next.moduleProgress[DEFAULT_MODULE_ID]=hasActivity(scoped)?scoped:hasActivity(legacy)?legacy:scoped||{};
   }
   LEGACY_PROGRESS_KEYS.forEach(k=>{delete next[k]});
-  Object.keys(next.moduleProgress).forEach(id=>{next.moduleProgress[id]=normalizeProgress(next.moduleProgress[id])});
-  if(!next.selectedModule)next.selectedModule=DEFAULT_MODULE_ID;
+  for(const m of MODULES)next.moduleProgress[m.id]=normalizeProgress(next.moduleProgress[m.id],m.id);
+  if(!MODULES.some(m=>m.id===next.selectedModule))next.selectedModule=DEFAULT_MODULE_ID;
+  if(!PRODUCTS.some(p=>p.id===next.selectedProduct))next.selectedProduct=PRODUCTS[0]?.id||null;
   if(typeof next.pilotAlias!=='string')next.pilotAlias='';
+  if(typeof next.catalogBrand!=='string')next.catalogBrand='all';
+  if(!['home','module','map','catalog','product','case','caseReview','chat','decision','reaction','bossCheck','final','review'].includes(next.view))next.view='home';
+  next.storageRevision=Number.isSafeInteger(next.storageRevision)&&next.storageRevision>=0?next.storageRevision:0;
   return next;
 }
-function load(){try{return migrate(JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return fresh()}}
+function keepOriginal(raw,key){
+  if(raw!==null&&localStorage.getItem(key)===null)localStorage.setItem(key,raw);
+}
+function load(){
+  let raw=null;
+  try{raw=localStorage.getItem(KEY);persistence.lastStored=raw}catch(e){persistence.issue='read';return fresh()}
+  if(raw===null)return migrate({});
+  let parsed;
+  try{parsed=JSON.parse(raw);if(!record(parsed))throw new Error('invalid record')}
+  catch(e){persistence.issue='corrupt';return migrate({})}
+  if(parsed.schemaVersion!==undefined&&parsed.schemaVersion!==SCHEMA_VERSION){persistence.issue='future';return migrate({})}
+  const next=migrate(parsed);
+  // Preserve the exact original before any version conversion or structural repair.
+  if(JSON.stringify(next)!==JSON.stringify(parsed)){
+    try{keepOriginal(raw,parsed.schemaVersion===undefined?BACKUP_KEY:RECOVERY_KEY)}
+    catch(e){persistence.issue='backup'}
+  }
+  return next;
+}
 let S=load();
 let actionEpoch=0;
 let choiceLockedUntil=0;
 let reviewedCase=null;
 function actionToken(view=S.view){return `${actionEpoch}:${S.selectedModule}:${MP().current}:${MP().revision||0}:${MP().node}:${view}`}
-function acceptsAction(token,view){return S.view===view&&token===actionToken(view)}
+function acceptsAction(token,view){return !['corrupt','future','conflict','read','backup'].includes(persistence.issue)&&S.view===view&&token===actionToken(view)}
 function changed(p=MP()){p.revision=(p.revision||0)+1}
 function moduleComplete(p=MP()){return C().length>0&&C().every((c,i)=>p.completed.includes(i)&&p.results.some(r=>r.i===i))}
 function nextCaseIndex(p=MP()){return C().findIndex((c,i)=>!p.completed.includes(i))}
 function canStartCase(i,p=MP()){return Number.isInteger(i)&&i===nextCaseIndex(p)}
-function save(){localStorage.setItem(KEY,JSON.stringify(S))}
-function reset(){localStorage.removeItem(KEY);S=fresh();ensureProgress();render()}
-function resetModule(){const m=activeModule();if(!m)return;S.moduleProgress[m.id]=blankModuleProgress();actionEpoch++;choiceLockedUntil=0;S.view='home';save();render()}
+function persistenceStatus(){
+  const box=el('storageStatus');if(!box)return;
+  const issue=persistence.issue;box.hidden=!issue;
+  const messages={
+    read:'No pudimos leer tu progreso. La sesión sigue abierta; reintentá antes de cerrar.',
+    write:'No pudimos guardar el último cambio. La sesión sigue abierta; reintentá antes de cerrar.',
+    backup:'No pudimos respaldar tu progreso anterior. No se sobrescribió el guardado.',
+    corrupt:'El progreso guardado necesita recuperación. Conservamos el original sin sobrescribirlo.',
+    future:'Este progreso pertenece a otra versión. No se sobrescribió el guardado.',
+    conflict:'El progreso cambió en otra pestaña. Cargá ese guardado para continuar sin sobrescribirlo.'
+  };
+  el('storageMessage').textContent=messages[issue]||'';
+  el('retryStorage').hidden=!['read','write','backup'].includes(issue);
+  el('reloadStorage').hidden=issue!=='conflict';
+  el('recoverStorage').hidden=issue!=='corrupt';
+}
+function save(){
+  if(persistence.issue&&persistence.issue!=='write'){persistenceStatus();return false}
+  try{
+    if(localStorage.getItem(KEY)!==persistence.lastStored){persistence.issue='conflict';persistenceStatus();return false}
+    if(JSON.stringify(S)===persistence.lastStored){persistence.issue=null;persistenceStatus();return true}
+    const previous=S.storageRevision||0;S.storageRevision=previous+1;
+    try{const serialized=JSON.stringify(S);localStorage.setItem(KEY,serialized);persistence.lastStored=serialized}
+    catch(e){S.storageRevision=previous;throw e}
+    persistence.issue=null;persistenceStatus();return true;
+  }catch(e){persistence.issue='write';persistenceStatus();return false}
+}
+function retryPersistence(){
+  const issue=persistence.issue;
+  if(issue==='read'){
+    if(!window.confirm('Se volverá a cargar el progreso guardado. Los cambios de esta sesión que no se pudieron guardar se descartarán. ¿Continuar?'))return;
+    persistence.issue=null;S=load();actionEpoch++;render();return;
+  }
+  if(issue==='backup'){
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(raw!==persistence.lastStored){persistence.issue='conflict';persistenceStatus();return}
+      keepOriginal(raw,JSON.parse(raw).schemaVersion===undefined?BACKUP_KEY:RECOVERY_KEY);
+    }catch(e){persistenceStatus();return}
+  }
+  if(['write','backup'].includes(issue)){persistence.issue=null;save()}
+}
+function reloadSavedProgress(){
+  if(window.confirm('Se cargará el progreso de la otra pestaña. Los cambios locales que no se guardaron se descartarán. ¿Continuar?'))window.location.reload();
+}
+function recoverStorage(){
+  if(persistence.issue!=='corrupt'||!window.confirm('¿Crear un progreso nuevo? Primero conservaremos una copia del guardado que no se pudo leer.'))return;
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw!==persistence.lastStored){persistence.issue='conflict';persistenceStatus();return}
+    // Keep each explicitly replaced malformed record, even if an older recovery exists.
+    const key=localStorage.getItem(RECOVERY_KEY)===null?RECOVERY_KEY:RECOVERY_KEY+'-'+Date.now();
+    localStorage.setItem(key,raw);
+    persistence.issue=null;S=migrate({});actionEpoch++;save();render();
+  }catch(e){persistence.issue='corrupt';persistenceStatus()}
+}
+function reset(){
+  if(persistence.issue){persistenceStatus();return}
+  S=migrate({});actionEpoch++;choiceLockedUntil=0;save();render();
+}
+function resetModule(){
+  const m=activeModule();if(!m)return;
+  if(persistence.issue){persistenceStatus();return}
+  S.moduleProgress[m.id]=blankModuleProgress();actionEpoch++;choiceLockedUntil=0;S.view='home';save();render();
+}
 function tap(){try{navigator.vibrate&&navigator.vibrate(8)}catch(e){}}
 function el(id){return document.getElementById(id)}
 function brandById(id){return BRANDS.find(b=>b.id===id)}
@@ -365,15 +476,32 @@ function pilotDuration(){const p=MP();if(!p.startedAt||!p.finishedAt)return null
 function pilotResultText(){
   const m=activeModule(),s=scoreSummary(),mins=pilotDuration(),alias=(el('pilotAlias')?.value||S.pilotAlias||'Piloto').trim()||'Piloto';
   S.pilotAlias=alias;save();
-  return `PITBULL ACADEMY · PRE-PILOT\n${alias}\n${m.code} · ${m.title}\nGeneral: ${s.total}\nEscucha: ${s.listen}\nCriterio: ${s.criterion}\nConversación: ${s.conversation}\nRecomendación: ${s.recommendation}${mins?`\nDuración: ${mins} min`:''}\nCasos: ${MP().completed.length}/${C().length}\nBuild: CORE V1.1`;
+  return `PITBULL ACADEMY · PRE-PILOT\n${alias}\n${m.code} · ${m.title}\nGeneral: ${s.total}\nEscucha: ${s.listen}\nCriterio: ${s.criterion}\nConversación: ${s.conversation}\nRecomendación: ${s.recommendation}${mins?`\nDuración: ${mins} min`:''}\nCasos: ${MP().completed.length}/${C().length}\nBuild: CORE V1.1 · ${RELEASE}`;
+}
+let sharingResult=false;
+function copyFeedback(message){const status=el('copyStatus');if(status)status.textContent=message}
+async function copyPilotResult(text=pilotResultText()){
+  tap();
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(text);copyFeedback('Resultado copiado.');
+    el('copyFallback').hidden=true;return true;
+  }catch(e){
+    const box=el('copyFallback'),field=el('resultText');
+    field.value=text;box.hidden=false;field.focus();field.select();
+    copyFeedback('Seleccioná y copiá el texto del resultado.');return false;
+  }
 }
 async function sharePilotResult(){
-  tap();const text=pilotResultText(),btn=el('shareResult');
+  if(sharingResult)return;
+  sharingResult=true;tap();const text=pilotResultText(),btn=el('shareResult');if(btn)btn.disabled=true;
   try{
-    if(navigator.share){await navigator.share({title:'Pitbull Academy · Resultado PRE-PILOT',text})}
-    else if(navigator.clipboard){await navigator.clipboard.writeText(text);if(btn){const old=btn.innerHTML;btn.innerHTML='<span>RESULTADO COPIADO</span><span>✓</span>';setTimeout(()=>btn.innerHTML=old,1600)}}
-    else{window.prompt('Copiá este resultado',text)}
-  }catch(e){}
+    if(navigator.share){
+      try{await navigator.share({title:'Pitbull Academy · Resultado PRE-PILOT',text});return}
+      catch(e){if(e.name==='AbortError'){copyFeedback('Podés usar COPIAR RESULTADO cuando quieras.');return}}
+    }
+    await copyPilotResult(text);
+  }finally{sharingResult=false;if(btn)btn.disabled=false}
 }
 function review({scroll=true}={}){
   const p=MP(),actions=Object.fromEntries((activeModule().decisionActions||[]).map(a=>[a.id,actionLabel(a)]));actions.LOST='Cliente perdido';
@@ -382,4 +510,7 @@ function review({scroll=true}={}){
 }
 
 window.addEventListener('DOMContentLoaded',render);
+window.addEventListener('storage',event=>{if(event.key===KEY||event.key===null){if(event.newValue!==persistence.lastStored){persistence.issue='conflict';persistenceStatus()}}});
+window.addEventListener('beforeunload',event=>{if(persistence.issue){event.preventDefault();event.returnValue=''}});
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}))}

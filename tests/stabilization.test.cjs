@@ -207,3 +207,125 @@ test('current runtime does not load or depend on the compatibility reset file', 
   r.run(fs.readFileSync(path.join(ROOT, 'reset-progress.js'), 'utf8'));
   assert.deepEqual(r.json('MP()'), before);
 });
+
+test('migration backs up the exact legacy record and retains the active scoped session', () => {
+  const old = startCase();choice(old,0);
+  const source=old.json('S');delete source.schemaVersion;
+  source.completed=[0,1,2];source.chat=[{who:'client',text:'older legacy conversation'}];
+  const raw=JSON.stringify(source);
+  const r=runtime({seed:{[KEY]:raw}});
+  assert.equal(r.storage.get(KEY+'-before-phase1'),raw);
+  assert.equal(r.run('S.schemaVersion'),1);
+  assert.equal(r.run('MP().node'),'deep');
+  assert.equal(r.run('MP().chat.length'),3);
+  assert.equal(r.run('Object.hasOwn(S,"completed")'),false);
+});
+
+test('top-level legacy progress is migrated when no active scoped record exists', () => {
+  const old=startCase();choice(old,1);
+  const r=runtime({seed:{[KEY]:JSON.stringify({view:'chat',...old.json('MP()')})}});
+  assert.equal(r.run('MP().node'),'deep');
+  assert.deepEqual(r.json('MP().discovered'),['bases']);
+});
+
+test('malformed arrays are repaired without discarding valid conversation and results', () => {
+  const old=startCase(1);choice(old,0);
+  const source=old.json('S');source.moduleProgress.m01.completed='bad';
+  const raw=JSON.stringify(source),r=runtime({seed:{[KEY]:raw}});
+  assert.deepEqual(r.json('MP().completed'),[0]);
+  assert.equal(r.run('MP().chat.length'),3);
+  assert.equal(r.storage.get(KEY+'-recovery'),raw);
+});
+
+test('invalid JSON and unsupported future schemas are never overwritten by rendering or actions', () => {
+  for(const raw of ['{broken',JSON.stringify({schemaVersion:99,moduleProgress:{precious:true}})]){
+    const r=runtime({seed:{[KEY]:raw}});
+    r.run('render();reset();resetModule();save()');
+    assert.equal(r.storage.get(KEY),raw);
+    assert.equal(r.nodes.get('storageStatus').hidden,false);
+  }
+});
+
+test('explicit recovery preserves malformed data before creating a fresh record', () => {
+  const r=runtime({seed:{[KEY]:'{broken'}});
+  r.run('recoverStorage()');
+  assert.equal(r.storage.get(KEY+'-recovery'),'{broken');
+  assert.equal(JSON.parse(r.storage.get(KEY)).schemaVersion,1);
+  assert.equal(r.run('persistence.issue'),null);
+});
+
+test('failed backup prevents migration from overwriting the original', () => {
+  const raw=JSON.stringify({view:'home',current:0});
+  const r=runtime({seed:{[KEY]:raw},storageFailure:true});
+  assert.equal(r.storage.get(KEY),raw);
+  assert.equal(r.run('persistence.issue'),'backup');
+  r.failWrites(false);r.run('retryPersistence()');
+  assert.equal(r.storage.get(KEY+'-before-phase1'),raw);
+  assert.equal(JSON.parse(r.storage.get(KEY)).schemaVersion,1);
+});
+
+test('failed save leaves active state usable and retry saves the same intervention once', () => {
+  const r=startCase(),old=r.storage.get(KEY);
+  r.failWrites(true);choice(r,0);
+  assert.equal(r.run('MP().node'),'deep');
+  assert.equal(r.storage.get(KEY),old);
+  assert.equal(r.run('persistence.issue'),'write');
+  r.failWrites(false);r.run('retryPersistence()');
+  assert.equal(r.run('persistence.issue'),null);
+  assert.equal(JSON.parse(r.storage.get(KEY)).moduleProgress.m01.chat.length,3);
+});
+
+test('another tab cannot be silently overwritten', () => {
+  const r=startCase();
+  const other=r.json('S');other.pilotAlias='Other tab';
+  const raw=JSON.stringify(other);r.storage.set(KEY,raw);
+  choice(r,0);
+  assert.equal(r.storage.get(KEY),raw);
+  assert.equal(r.run('persistence.issue'),'conflict');
+});
+
+test('reset is limited to the selected module and preserves backups and profile', () => {
+  const r=startCase();choice(r,0);
+  r.run("S.pilotAlias='Seller';S.moduleProgress.future={preserved:true};save()");
+  r.storage.set(KEY+'-before-phase1','original');
+  r.run('resetModule()');
+  assert.equal(r.run('MP().chat.length'),0);
+  assert.equal(r.run('S.pilotAlias'),'Seller');
+  assert.deepEqual(r.json('S.moduleProgress.future'),{preserved:true});
+  assert.equal(r.storage.get(KEY+'-before-phase1'),'original');
+});
+
+test('pending normal and lost consequences survive reload and commit once', () => {
+  for(const lost of [false,true]){
+    const r=startCase(lost?3:0);
+    if(lost)for(const i of [2,2,1])choice(r,i);else decision(r,'RECOMMEND_PRODUCT');
+    const restored=runtime({seed:Object.fromEntries(r.storage)});restored.advance();
+    const token=restored.run("actionToken('reaction')");
+    restored.run(`${lost?'commitLost':'commit'}(${JSON.stringify(token)})`);
+    assert.equal(restored.run('MP().results.length'),lost?4:1);
+    assert.equal(restored.run('MP().pending'),null);
+    assert.equal(restored.run('MP().lostPending'),null);
+  }
+});
+
+test('native sharing failure falls back to clipboard; denied clipboard exposes selectable text', async () => {
+  const r=startCase();
+  let copied='';r.context.navigator.share=async()=>{throw new Error('share failed')};
+  r.context.navigator.clipboard={writeText:async text=>{copied=text}};
+  await r.run('sharePilotResult()');
+  assert.match(copied,/PITBULL ACADEMY/);
+  assert.match(copied,/phase1-2026-09-15-1/);
+  r.context.navigator.clipboard.writeText=async()=>{throw new Error('denied')};
+  await r.run('copyPilotResult()');
+  assert.equal(r.nodes.get('copyFallback').hidden,false);
+  assert.equal(r.nodes.get('resultText').value,copied);
+});
+
+test('cancelled native share keeps independent copying available', async () => {
+  const r=startCase();let copied=false;
+  r.context.navigator.share=async()=>{throw Object.assign(new Error('cancelled'),{name:'AbortError'})};
+  r.context.navigator.clipboard={writeText:async()=>{copied=true}};
+  await r.run('sharePilotResult()');assert.equal(copied,false);
+  await r.run('copyPilotResult()');assert.equal(copied,true);
+  assert.equal(r.nodes.get('shareResult').disabled,false);
+});

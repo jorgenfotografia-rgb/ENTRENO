@@ -21,6 +21,12 @@
 </section>
 
 <main class="app">
+  <aside id="storageStatus" class="runtime-status" role="status" hidden>
+    <p id="storageMessage"></p>
+    <button id="retryStorage" class="tertiary" onclick="retryPersistence()" hidden>REINTENTAR GUARDADO</button>
+    <button id="reloadStorage" class="tertiary" onclick="reloadSavedProgress()" hidden>CARGAR PROGRESO GUARDADO</button>
+    <button id="recoverStorage" class="tertiary" onclick="recoverStorage()" hidden>CREAR PROGRESO NUEVO</button>
+  </aside>
   <div class="topline">
     <div id="appcode" class="appcode">PITBULL ACADEMY</div>
     <div id="moduleMeter" class="module-meter" style="--p:0deg;visibility:hidden" aria-label="Progreso del módulo"><span id="moduleMeterText">0/6</span></div>
@@ -156,6 +162,9 @@
       <input id="pilotAlias" type="text" maxlength="40" autocomplete="name" placeholder="Ej. Vendedor 01">
       <p class="small">Usalo únicamente para identificar el resultado de esta prueba.</p>
       <button id="shareResult" class="secondary" onclick="sharePilotResult()"><span>COMPARTIR RESULTADO</span><span>↗</span></button>
+      <button id="copyResult" class="secondary" onclick="copyPilotResult()"><span>COPIAR RESULTADO</span><span>⧉</span></button>
+      <p id="copyStatus" class="copy-status" role="status"></p>
+      <div id="copyFallback" class="copy-fallback" hidden><label for="resultText">Resultado para copiar</label><textarea id="resultText" readonly></textarea></div>
     </div>
     <div class="actions"><button class="secondary" onclick="review()"><span>REVISAR TURNO</span><span>→</span></button><button class="tertiary" onclick="resetModule()"><span>REINICIAR MÓDULO</span><span>↻</span></button></div>
   </section>
