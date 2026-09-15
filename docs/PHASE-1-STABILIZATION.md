@@ -81,6 +81,35 @@ The tests start a temporary local HTTP server and isolated browser profiles. Bro
 
 Legacy characterization was committed before application refactoring. It checks 324 complete-route/action combinations and 72 early decisions against hashes captured from the effective original runtime, including overrides. It also checks ASK_MORE, score weights, rank boundaries, Boss bonus, and unchanged curriculum/catalog content.
 
+### Final local verification — 2026-09-15
+
+- Dependency-free suite: **40 passed, 0 failed, 0 skipped**.
+- Browser suite: **5 passed, 0 failed, 0 skipped**, using the existing Playwright installation and headless Chrome on Windows.
+- Viewports: desktop 1280 × 900 and mobile 390 × 844.
+- Both viewports completed all six legacy cases, Boss Check, final result, reload, review, and module reset. The characterized route produced Escucha 81, Criterio 100, Conversación 89, Recomendación 100, total 93, and ASESOR.
+- Rapid activation produced one intervention. Reload retained the opening, selected question, facts, and node. Sharing and clipboard failure exposed selectable result text.
+- Upgrade from the audited service worker preserved the live conversation, exact original storage backup, and an unrelated cache. Offline reload succeeded. A missing script returned the expected plain-text 503 rather than HTML.
+- Upgrade from a Phase 1 worker to another release waited for explicit activation and preserved the live conversation. Unit coverage also verifies that failed saving prevents activation.
+- Failed or mismatched release installation did not publish a partial snapshot. Required response bodies are fully consumed during installation; this resolved a connection-pool stall caught by browser testing.
+- Invalid saved case indices cannot attach old conversation state to another client. Repairs retain valid results and back up the original record.
+- `git diff --check` passed. Client and module data, catalog/source/brand data, assets, and every normative specification have no diff from the audited revision. A structured comparison also confirmed unchanged M01 scenario content, answers, visual mappings, and Boss Check, excluding the two new compatibility-routing fields.
+
+These are local verification results. Remote CI status must be inspected separately after pushing. Physical phones, Safari/iOS, and the production deployment were not tested.
+
+## Files changed
+
+| Files | Phase 1 purpose |
+| --- | --- |
+| `app.js` | Stable handlers, state access, completion, recovery, sharing, update coordination |
+| `data/scenarios/m01.js`, `data/scenarios/m01-legacy-adapter.js` | Remove runtime overrides while preserving effective legacy policy in an explicit adapter |
+| `reset-progress.js` | Non-destructive compatibility repair for older cached pages only |
+| `index.html`, `core-v1.css` | Preserved pilot markup, zoom, accessible announcements, copy fallback, conditional status controls |
+| `service-worker.js` | Validated release snapshot, scoped cleanup, navigation-only HTML fallback |
+| `.github/workflows/rebuild-image-assets.yml` | Repair obsolete references; rebuild assets without rewriting application code |
+| `package.json`, `.github/workflows/test.yml` | Dependency-free test commands and CI |
+| `tests/helpers/runtime.cjs`, `tests/stabilization.test.cjs`, `tests/service-worker.test.cjs`, `tests/browser.test.cjs` | Characterization, regression, browser, and upgrade verification |
+| `docs/PHASE-1-STABILIZATION.md` | Scope, evidence, compatibility, release and rollback instructions |
+
 ## Rollback
 
 Keep storage backups and the working branch's small commits. Roll back a failing change with a new corrective release identity; do not reuse a cache identity.
