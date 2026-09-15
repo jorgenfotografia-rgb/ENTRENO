@@ -4,6 +4,7 @@
   <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b0c0d">
+  <meta name="academy-release" content="phase1-2026-09-15-1">
   <title>Pitbull Academy · Core V1.1 PRE-PILOT</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
@@ -21,6 +22,10 @@
 </section>
 
 <main class="app">
+  <aside id="updateStatus" class="runtime-status" role="status" hidden>
+    <p>Hay una actualización disponible. Tu progreso se guardará antes de abrirla.</p>
+    <button id="applyUpdate" class="tertiary" onclick="applyUpdate()">ACTUALIZAR</button>
+  </aside>
   <aside id="storageStatus" class="runtime-status" role="status" hidden>
     <p id="storageMessage"></p>
     <button id="retryStorage" class="tertiary" onclick="retryPersistence()" hidden>REINTENTAR GUARDADO</button>

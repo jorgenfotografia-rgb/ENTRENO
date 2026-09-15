@@ -513,4 +513,34 @@ window.addEventListener('DOMContentLoaded',render);
 window.addEventListener('storage',event=>{if(event.key===KEY||event.key===null){if(event.newValue!==persistence.lastStored){persistence.issue='conflict';persistenceStatus()}}});
 window.addEventListener('beforeunload',event=>{if(persistence.issue){event.preventDefault();event.returnValue=''}});
 
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}))}
+let updateRegistration=null;
+let applyingUpdate=false;
+function showUpdate(registration){updateRegistration=registration;const box=el('updateStatus');if(box)box.hidden=false}
+function applyUpdate(){
+  if(applyingUpdate||!save())return;
+  applyingUpdate=true;
+  if(updateRegistration?.waiting)updateRegistration.waiting.postMessage({type:'ACTIVATE_UPDATE'});
+  else window.location.reload();
+}
+if('serviceWorker' in navigator){
+  let hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(applyingUpdate){window.location.reload();return}
+    if(hadController)showUpdate(updateRegistration);
+    hadController=true;
+  });
+  window.addEventListener('load',async()=>{
+    try{
+      const registration=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+      updateRegistration=registration;
+      if(registration.waiting)showUpdate(registration);
+      registration.addEventListener('updatefound',()=>{
+        const installing=registration.installing;
+        installing?.addEventListener('statechange',()=>{
+          if(installing.state==='installed'&&navigator.serviceWorker.controller)showUpdate(registration);
+        });
+      });
+      await registration.update();
+    }catch(e){/* Existing/offline training remains available. */}
+  });
+}
