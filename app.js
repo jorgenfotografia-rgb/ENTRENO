@@ -33,7 +33,8 @@ function normalizeProgress(input={},moduleId=DEFAULT_MODULE_ID){
     .map(r=>({...r,name:clients[r.i].name,correct:!!r.correct}));
   // A completion without its result cannot be reconstructed without inventing a score.
   p.completed=p.results.map(r=>r.i);
-  p.current=validIndex(p.current)?p.current:(clients.findIndex((c,i)=>!p.completed.includes(i))+clients.length)%Math.max(1,clients.length);
+  const validCurrent=validIndex(p.current);
+  p.current=validCurrent?p.current:Math.max(0,clients.findIndex((c,i)=>!p.completed.includes(i)));
   p.chat=list(p.chat).filter(x=>record(x)&&['you','client'].includes(x.who)&&typeof x.text==='string'&&(x.q===undefined||Number.isFinite(x.q)));
   const c=clients[p.current];
   p.discovered=[...new Set(list(p.discovered).filter(f=>typeof f==='string'&&c?.facts.includes(f)))];
@@ -49,7 +50,7 @@ function normalizeProgress(input={},moduleId=DEFAULT_MODULE_ID){
   p.lostPending=record(p.lostPending)&&validScores(p.lostPending.scores)?p.lostPending:null;
   if(p.pending)p.lostPending=null;
   if(p.completed.includes(p.current)){p.pending=null;p.lostPending=null}
-  if(!c||!(p.node==='end'||Object.hasOwn(c.nodes,p.node))){
+  if(!validCurrent||!c||!(p.node==='end'||Object.hasOwn(c.nodes,p.node))){
     p.node='start';p.chat=[];p.discovered=[];p.rapport=62;p.pending=null;p.lostPending=null;
   }
   // Never silently reconstruct a broken conversation's scoring from prose.

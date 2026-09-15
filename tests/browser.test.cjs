@@ -113,7 +113,8 @@ for(const [label,viewport] of [['desktop',{width:1280,height:900}],['mobile',{wi
     assert.equal(await page.locator('#final').isVisible(),true);
     assert.equal(await page.evaluate(()=>MP().completed.length),6);
     const summary=await page.evaluate(()=>scoreSummary());
-    assert.ok(summary.total>0);assert.equal(await page.locator('#overall').textContent(),String(summary.total));
+    assert.deepEqual(summary,{listen:81,criterion:100,conversation:89,recommendation:100,total:93,rank:'ASESOR'});
+    assert.equal(await page.locator('#overall').textContent(),String(summary.total));
     await screenshot(page,t,label+'-result');
     await page.reload();await enter(page);
     assert.deepEqual(await page.evaluate(()=>scoreSummary()),summary);

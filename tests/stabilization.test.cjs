@@ -329,3 +329,44 @@ test('cancelled native share keeps independent copying available', async () => {
   await r.run('copyPilotResult()');assert.equal(copied,true);
   assert.equal(r.nodes.get('shareResult').disabled,false);
 });
+
+test('an invalid saved case index never attaches an old conversation to another client', () => {
+  const old=startCase(1);choice(old,0);
+  const source=old.json('S');source.moduleProgress.m01.current=99;
+  const raw=JSON.stringify(source),r=runtime({seed:{[KEY]:raw}});
+  assert.equal(r.run('MP().chat.length'),0);
+  assert.equal(r.run('MP().node'),'start');
+  assert.deepEqual(r.json('MP().completed'),[0]);
+  assert.equal(r.storage.get(KEY+'-recovery'),raw);
+});
+
+test('persisted navigation stages restore without advancing pedagogical progress', () => {
+  for(const view of ['home','module','map','case','chat','decision','catalog','product']){
+    const r=startCase();choice(r,0);r.run(`show('${view}')`);
+    const before=r.json('MP()'),restored=runtime({seed:Object.fromEntries(r.storage)});
+    assert.equal(restored.run('S.view'),view,view);
+    assert.deepEqual(restored.json('MP()'),before,view);
+  }
+});
+
+test('Boss Check reload preserves first answer and rejects a queued second answer', () => {
+  const r=startCase(2);decision(r,'RECOMMEND_CATEGORY');r.advance();
+  r.run("commit(actionToken('reaction'))");
+  assert.equal(r.run('S.view'),'bossCheck');
+  const restored=runtime({seed:Object.fromEntries(r.storage)});
+  const token=restored.run("actionToken('bossCheck')");
+  restored.run(`bossAnswer(0,${JSON.stringify(token)});bossAnswer(1,${JSON.stringify(token)})`);
+  assert.equal(restored.run('MP().bossCheck'),0);
+  const again=runtime({seed:Object.fromEntries(restored.storage)});
+  assert.equal(again.run('MP().bossCheck'),0);
+  assert.equal(again.run('MP().results.length'),3);
+});
+
+test('update activation is blocked when the live state cannot be saved', () => {
+  const r=startCase();r.run('let updateMessages=0;updateRegistration={waiting:{postMessage(){updateMessages++}}}');
+  r.failWrites(true);choice(r,0);r.run('applyUpdate()');
+  assert.equal(r.run('updateMessages'),0);
+  assert.equal(r.run('applyingUpdate'),false);
+  r.failWrites(false);r.run('retryPersistence();applyUpdate()');
+  assert.equal(r.run('updateMessages'),1);
+});
