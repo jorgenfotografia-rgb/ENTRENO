@@ -1,7 +1,7 @@
-# Migration Rules V1.0
+# Migration Rules V1.1
 
 ## Objetivo
-Migrar Pitbull Academy desde el prototipo actual hacia la arquitectura pedagógica V1.0 sin perder estabilidad ni UX útil.
+Migrar Pitbull Academy desde el prototipo actual hacia la arquitectura pedagógica vigente sin perder estabilidad ni UX útil.
 
 ## Orden obligatorio
 1. Auditar.
@@ -10,7 +10,8 @@ Migrar Pitbull Academy desde el prototipo actual hacia la arquitectura pedagógi
 4. Agregar tests.
 5. Introducir nuevo modelo de datos.
 6. Migrar M01.
-7. Expandir visuales y currículum.
+7. Incorporar variabilidad, modos y replay válido.
+8. Expandir visuales y currículum.
 
 ## Antes de modificar
 Codex debe leer todo `/docs/academy-system/` y revisar el repositorio actual completo.
@@ -32,7 +33,10 @@ Codex debe leer todo `/docs/academy-system/` y revisar el repositorio actual com
 - acoplamiento entre visuales y estado pedagógico;
 - normalización que sustituya referencias de estado durante una mutación;
 - resets temporales de debugging como solución permanente;
-- service worker que dificulte comprobar despliegues.
+- service worker que dificulte comprobar despliegues;
+- opciones conversacionales que puedan repetirse por error;
+- dependencias de Web Share API sin fallback;
+- UX irreversible no anunciada.
 
 ## Restricciones
 - No hacer una reescritura total sin justificarla.
@@ -40,6 +44,8 @@ Codex debe leer todo `/docs/academy-system/` y revisar el repositorio actual com
 - No cambiar simultáneamente engine, modelo pedagógico y diseño visual si puede evitarse.
 - No inventar comportamiento pedagógico ausente de la especificación.
 - No convertir supuestos en requisitos sin señalarlos.
+- No introducir aleatoriedad libre como sustituto de variabilidad controlada.
+- No usar IA generativa en tiempo real como única fuente de conversaciones evaluables.
 
 ## Fase 0 · Auditoría
 Sin cambios de código. Entregar:
@@ -50,6 +56,8 @@ Sin cambios de código. Entregar:
 - regresiones conocidas y causas probables;
 - riesgos de service worker/cache;
 - código reutilizable;
+- gaps respecto de CLIENTS / VISITS / MODULES / CATALOG / ENGINE / VISUALS;
+- gaps respecto de Master Visit Card, Scoring Engine, replay y UX rules;
 - propuesta de arquitectura destino;
 - plan incremental por fases;
 - estrategia de tests.
@@ -59,8 +67,10 @@ Objetivo: que el prototipo actual sea confiable antes de migrarlo.
 - una sola fuente de verdad para progreso;
 - handlers estables;
 - conversación sin duplicados;
+- prevención de doble tap;
 - persistencia predecible;
 - cache actualizable;
+- share fallback mínimo si se toca esa superficie;
 - tests básicos.
 
 No migrar aún el nuevo currículum.
@@ -69,10 +79,20 @@ No migrar aún el nuevo currículum.
 Extraer responsabilidades en módulos claros: engine, state/persistence, clients, visits, modules, catalog y visuals.
 
 ## Fase 3 · Nuevo modelo
-Implementar facts, topics, readiness, memory, terminology mapping y score ledger sin cambiar innecesariamente la UX.
+Implementar facts, topics, readiness, memory, terminology mapping, score ledger y soporte de TRAINING/EVALUATION sin cambiar innecesariamente la UX.
 
 ## Fase 4 · M01
-Migrar M01 a Master Visit Card y Scoring Engine V1.0 usando `08_M01_REFERENCE_SPEC.md` y las visitas definitivas.
+Migrar M01 a Master Visit Card y Scoring Engine usando `08_M01_REFERENCE_SPEC.md`, `11_CONVERSATION_EDITORIAL_BIBLE.md` y `12_UX_FUNCTIONAL_RULES.md`.
+
+El primer objetivo es ejecutar correctamente las seis visitas canónicas V2.
+
+## Fase 5 · Replay y pool
+Expandir M01 hacia un pool mínimo de visitas aprobado, permitir selección controlada por ejecución y verificar que repetir el módulo no se convierta en memoria de guion.
+
+## Fase 6 · Expansión
+Incorporar progresivamente nuevos módulos, memoria longitudinal, visuales canónicos y competencias avanzadas.
 
 ## Criterio de aceptación
 Cada fase debe dejar el repositorio ejecutable, testeable y más simple de razonar que antes.
+
+Ninguna fase puede considerarse completa si corrige un comportamiento visual a costa de duplicar o fragmentar la fuente de verdad del engine.
