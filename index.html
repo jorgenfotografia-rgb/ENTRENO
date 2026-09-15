@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b0c0d">
   <title>Pitbull Academy · Core V1.1 PRE-PILOT</title>
   <link rel="manifest" href="manifest.webmanifest">
@@ -100,6 +100,7 @@
     <p id="mapMeta" class="eyebrow">SIMULADOR</p>
     <h2>Tu próximo cliente.</h2>
     <p class="muted">Los casos se desbloquean en orden. Los completados quedan disponibles para revisión.</p>
+    <div id="visualPilotNote" class="visual-pilot-note"><strong>VISUAL PILOT</strong><span>La misma referencia de Camila se usa temporalmente en todos los clientes para validar la experiencia visual.</span></div>
     <div id="clientList" class="cast"></div>
     <div class="actions"><button class="tertiary" onclick="show('home')"><span>SALIR DEL MÓDULO</span><span>←</span></button></div>
   </section>
@@ -125,11 +126,12 @@
 
   <section id="chat" class="screen" hidden>
     <div class="chat-head"><img id="chatAvatar" class="client-photo chat-photo" alt=""><div><strong id="chatName"></strong><span id="chatLabel"></span></div></div>
-    <div id="thread" class="thread"></div><div id="choices" class="choice-list"></div><button id="resolve" class="secondary resolve" onclick="openDecision()"></button>
+    <div id="thread" class="thread" role="log" aria-live="polite" aria-relevant="additions"></div><div id="choices" class="choice-list"></div><button id="resolve" class="secondary resolve" onclick="openDecision()"></button>
   </section>
 
   <section id="decision" class="screen" hidden>
     <p class="eyebrow">DECISIÓN</p><h2>¿Qué harías ahora?</h2><p class="muted">Elegí la acción que tomarías en el mostrador con lo que descubriste.</p>
+    <div id="decisionPerson" class="decision-person"><img id="decisionAvatar" class="client-photo decision-photo" alt=""><div><span>CLIENTE EN CURSO</span><strong id="decisionName"></strong><small id="decisionLabel"></small></div></div>
     <div id="decisionList" class="decision-list"></div>
     <div class="actions"><button class="tertiary" onclick="renderChat()"><span>VOLVER A LA CONVERSACIÓN</span><span>←</span></button></div>
   </section>
@@ -167,8 +169,8 @@
 <script src="data/modules.js"></script>
 <script src="data/clients.js"></script>
 <script src="data/scenarios/m01.js"></script>
+<script src="data/scenarios/m01-legacy-adapter.js"></script>
 <script src="app.js"></script>
-<script src="reset-progress.js"></script>
 <script>
 (() => {
   let hiddenAt = 0;
