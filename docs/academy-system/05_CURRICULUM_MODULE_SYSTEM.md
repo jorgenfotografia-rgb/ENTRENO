@@ -1,4 +1,4 @@
-# Curriculum / Module System V1.0
+# Curriculum / Module System V1.1
 
 ## Principio
 El currículum se organiza por competencias comerciales, no por suplementos.
@@ -21,6 +21,8 @@ Cada módulo debe declarar:
 - evaluation_mode_support
 - mastery_evidence
 - catalog_dependencies
+- replay_policy
+- visit_pool_policy
 
 ## Roles de visitas dentro de un módulo
 Una secuencia útil puede incluir:
@@ -32,6 +34,28 @@ Una secuencia útil puede incluir:
 6. Integración
 
 Las visitas no deben ser seis variaciones del mismo producto.
+
+## Replay Validity Rule
+Repetir un módulo debe seguir midiendo la competencia, no la memoria del guion.
+
+El sistema debe poder lograrlo mediante una o varias estrategias:
+- pool de visitas mayor que el número de visitas mostrado en una ejecución;
+- varias visitas posibles para un mismo cliente;
+- variantes controladas de apertura o contexto;
+- rutas conversacionales distintas que descubren hechos equivalentes;
+- selección diferente de clientes o situaciones entre sesiones.
+
+La variabilidad no debe alterar arbitrariamente la competencia evaluada ni volver incomparable el scoring.
+
+## Visit Pool Policy
+Un módulo puede declarar, por ejemplo, 6 visitas por ejecución a partir de un pool mayor. La selección debe preservar:
+- cobertura de la competencia primaria;
+- representación de roles pedagógicos;
+- dificultad esperada;
+- ausencia de repeticiones recientes cuando sea posible;
+- posibilidad de auditoría del contenido usado.
+
+No se requiere aleatoriedad total. Se prefiere variabilidad controlada y reproducible.
 
 ## Progresión curricular propuesta
 ### M01 · LEER ANTES DE VENDER
@@ -82,7 +106,7 @@ Completar un módulo no equivale automáticamente a dominar una competencia. El 
 - consistencia;
 - dominio provisional.
 
-La evidencia de dominio debe apoyarse especialmente en visitas de transferencia e integración.
+La evidencia de dominio debe apoyarse especialmente en visitas de transferencia e integración y, cuando exista replay, en consistencia a través de situaciones no idénticas.
 
 ## Dificultad
 La dificultad aumenta mediante:
@@ -97,5 +121,12 @@ La dificultad aumenta mediante:
 - múltiples necesidades posibles;
 - mayor necesidad de memoria y verificación.
 
+La dificultad no debe aumentar mediante redacción artificialmente confusa.
+
 ## Regla de diseño
 No introducir una competencia como evaluación fuerte antes de haberla expuesto o entrenado suficientemente.
+
+## Modos
+TRAINING MODE prioriza aprendizaje, feedback y posibilidad de corrección controlada.
+
+EVALUATION MODE prioriza primera respuesta, ausencia de pistas y comparabilidad. Debe anunciar de antemano la irreversibilidad de las intervenciones.
